@@ -21,9 +21,9 @@ const config = {
   // identity: null — disabilita code signing.
   // Senza certificato Apple Developer l'app mostra avviso "sviluppatore non identificato".
   // Accettabile per distribuzione open source.
-  // Per aggiungere icone: mettere icon.icns in build-resources/
   mac: {
     category: 'public.app-category.productivity',
+    icon: 'build-resources/icon.icns',
     target: [
       { target: 'dmg', arch: ['arm64', 'x64'] },
     ],
@@ -35,8 +35,8 @@ const config = {
   },
 
   // Windows: installer NSIS x64.
-  // Per aggiungere icona: mettere icon.ico in build-resources/
   win: {
+    icon: 'build-resources/icon.ico',
     target: [
       { target: 'nsis', arch: ['x64'] },
     ],
@@ -48,8 +48,8 @@ const config = {
   },
 
   // Linux: AppImage x64.
-  // Per aggiungere icona: mettere icon.png (512x512) in build-resources/
   linux: {
+    icon: 'build-resources/icon.png',
     target: [
       { target: 'AppImage', arch: ['x64'] },
     ],
@@ -57,4 +57,4 @@ const config = {
   },
 };
 
-export default config;
+module.exports = config;
