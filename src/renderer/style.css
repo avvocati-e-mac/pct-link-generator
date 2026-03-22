@@ -1,3 +1,128 @@
+/* ===== Variabili CSS — Light mode ===== */
+:root {
+  --color-bg:           #f5f7fa;
+  --color-surface:      #fff;
+  --color-header-bg:    #1a1a2e;
+  --color-header-text:  #fff;
+  --color-header-sub:   #a0aec0;
+  --color-text:         #1a1a2e;
+  --color-text-muted:   #718096;
+  --color-text-faint:   #4a5568;
+  --color-border:       #e2e8f0;
+  --color-border-light: #cbd5e0;
+  --color-accent:       #4a6cf7;
+  --color-accent-hover: #3757e8;
+  --color-accent-bg:    #eef2ff;
+  --color-accent-light: #dbeafe;
+  --color-accent-mid:   #93c5fd;
+  --color-accent-num:   #1a9be8;
+  --color-item-bg:      #f7f8fc;
+  --color-file-info-bg: #f0f4ff;
+  --color-drag-handle:  #a0aec0;
+  --color-drag-item-bg: #e0e7ff;
+  --color-shadow:       rgba(0,0,0,0.08);
+  --color-shadow-modal: rgba(0,0,0,0.18);
+  --color-backdrop:     rgba(0,0,0,0.4);
+  --color-table-header: #f5f7fa;
+  --color-status-info:    #2563eb;
+  --color-status-success: #16a34a;
+  --color-status-error:   #dc2626;
+  --color-status-warning: #d97706;
+  --color-warning-bg:     #fffbeb;
+  --color-warning-border: #f59e0b;
+  --color-warning-text:   #92400e;
+  --color-danger-bg:      #fee2e2;
+  --color-danger-text:    #dc2626;
+  --color-danger-border:  #fca5a5;
+  --color-danger-hover:   #fecaca;
+  --color-input-border:   #ccc;
+  --color-selected-bg:    #dbeafe;
+}
+
+/* ===== Dark mode — applicato con data-theme="dark" ===== */
+[data-theme="dark"] {
+  --color-bg:           #1a1a1a;
+  --color-surface:      #2a2a2a;
+  --color-header-bg:    #111111;
+  --color-header-text:  #e0e0e0;
+  --color-header-sub:   #888;
+  --color-text:         #e0e0e0;
+  --color-text-muted:   #999;
+  --color-text-faint:   #aaa;
+  --color-border:       #3a3a3a;
+  --color-border-light: #444;
+  --color-accent:       #1a9be8;
+  --color-accent-hover: #1580c5;
+  --color-accent-bg:    #1a2a3a;
+  --color-accent-light: #1a2f4a;
+  --color-accent-mid:   #1a6090;
+  --color-accent-num:   #1a9be8;
+  --color-item-bg:      #333;
+  --color-file-info-bg: #1e2a38;
+  --color-drag-handle:  #666;
+  --color-drag-item-bg: #1a2535;
+  --color-shadow:       rgba(0,0,0,0.3);
+  --color-shadow-modal: rgba(0,0,0,0.5);
+  --color-backdrop:     rgba(0,0,0,0.6);
+  --color-table-header: #333;
+  --color-status-info:    #60a5fa;
+  --color-status-success: #4ade80;
+  --color-status-error:   #f87171;
+  --color-status-warning: #fbbf24;
+  --color-warning-bg:     #2a2010;
+  --color-warning-border: #92400e;
+  --color-warning-text:   #fcd34d;
+  --color-danger-bg:      #2a1515;
+  --color-danger-text:    #f87171;
+  --color-danger-border:  #7f1d1d;
+  --color-danger-hover:   #3a1a1a;
+  --color-input-border:   #555;
+  --color-selected-bg:    #1a2f4a;
+}
+
+/* ===== Dark mode automatica da OS ===== */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg:           #1a1a1a;
+    --color-surface:      #2a2a2a;
+    --color-header-bg:    #111111;
+    --color-header-text:  #e0e0e0;
+    --color-header-sub:   #888;
+    --color-text:         #e0e0e0;
+    --color-text-muted:   #999;
+    --color-text-faint:   #aaa;
+    --color-border:       #3a3a3a;
+    --color-border-light: #444;
+    --color-accent:       #1a9be8;
+    --color-accent-hover: #1580c5;
+    --color-accent-bg:    #1a2a3a;
+    --color-accent-light: #1a2f4a;
+    --color-accent-mid:   #1a6090;
+    --color-accent-num:   #1a9be8;
+    --color-item-bg:      #333;
+    --color-file-info-bg: #1e2a38;
+    --color-drag-handle:  #666;
+    --color-drag-item-bg: #1a2535;
+    --color-shadow:       rgba(0,0,0,0.3);
+    --color-shadow-modal: rgba(0,0,0,0.5);
+    --color-backdrop:     rgba(0,0,0,0.6);
+    --color-table-header: #333;
+    --color-status-info:    #60a5fa;
+    --color-status-success: #4ade80;
+    --color-status-error:   #f87171;
+    --color-status-warning: #fbbf24;
+    --color-warning-bg:     #2a2010;
+    --color-warning-border: #92400e;
+    --color-warning-text:   #fcd34d;
+    --color-danger-bg:      #2a1515;
+    --color-danger-text:    #f87171;
+    --color-danger-border:  #7f1d1d;
+    --color-danger-hover:   #3a1a1a;
+    --color-input-border:   #555;
+    --color-selected-bg:    #1a2f4a;
+  }
+}
+
 /* ===== Utility ===== */
 .hidden {
   display: none !important;
@@ -18,17 +143,20 @@ html, body {
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
-  color: #1a1a2e;
-  background: #f5f7fa;
+  color: var(--color-text);
+  background: var(--color-bg);
   display: flex;
   flex-direction: column;
 }
 
 /* ===== Header ===== */
 header {
-  background: #1a1a2e;
-  color: #fff;
+  background: var(--color-header-bg);
+  color: var(--color-header-text);
   padding: 18px 32px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
 }
 
 header h1 {
@@ -39,8 +167,29 @@ header h1 {
 
 header .subtitle {
   font-size: 12px;
-  color: #a0aec0;
+  color: var(--color-header-sub);
   margin-top: 4px;
+}
+
+.header-text {
+  flex: 1;
+}
+
+/* ===== Toggle dark mode ===== */
+.btn-theme-toggle {
+  background: none;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  color: var(--color-header-text);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.btn-theme-toggle:hover {
+  background: rgba(255,255,255,0.1);
 }
 
 /* ===== Main ===== */
@@ -63,10 +212,10 @@ main {
 
 .column {
   flex: 1;
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--color-shadow);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -75,18 +224,18 @@ main {
 .column h2 {
   font-size: 15px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--color-text);
 }
 
 .column-desc {
   font-size: 12px;
-  color: #718096;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
 /* ===== Drop zone ===== */
 .drop-zone {
-  border: 2px dashed #cbd5e0;
+  border: 2px dashed var(--color-border-light);
   border-radius: 10px;
   padding: 32px 16px;
   text-align: center;
@@ -97,14 +246,14 @@ main {
 
 .drop-zone:hover,
 .drop-zone:focus {
-  border-color: #4a6cf7;
-  background: #eef2ff;
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
   outline: none;
 }
 
 .drop-zone.drag-over {
-  border-color: #4a6cf7;
-  background: #eef2ff;
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
 }
 
 .drop-zone-inner {
@@ -121,13 +270,13 @@ main {
 
 .drop-text {
   font-size: 13px;
-  color: #718096;
+  color: var(--color-text-muted);
   line-height: 1.5;
 }
 
 /* ===== Info file atto principale ===== */
 .file-info {
-  background: #f0f4ff;
+  background: var(--color-file-info-bg);
   border-radius: 8px;
   padding: 12px 14px;
   display: flex;
@@ -156,7 +305,7 @@ main {
 
 .file-path {
   font-size: 11px;
-  color: #718096;
+  color: var(--color-text-muted);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -175,7 +324,9 @@ main {
   width: 72px;
   padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-input-border);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .rename-scheme-row {
@@ -189,8 +340,10 @@ main {
 .rename-scheme-select {
   padding: 4px 8px;
   border-radius: 4px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-input-border);
   font-size: 13px;
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 .no-number-badge {
@@ -211,8 +364,8 @@ main {
 }
 
 .attachment-item {
-  background: #f7f8fc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-item-bg);
+  border: 1px solid var(--color-border);
   border-radius: 8px;
   padding: 10px 12px;
   display: grid;
@@ -223,7 +376,7 @@ main {
 }
 
 .attachment-item .att-number {
-  color: #1a9be8;
+  color: var(--color-accent-num);
   font-weight: 600;
   font-size: 0.9em;
   text-align: right;
@@ -248,7 +401,7 @@ main {
 /* ===== Pulsanti generici ===== */
 .btn-remove {
   background: none;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border);
   border-radius: 5px;
   width: 26px;
   height: 26px;
@@ -257,14 +410,14 @@ main {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #718096;
+  color: var(--color-text-muted);
   transition: background 0.12s, color 0.12s;
 }
 
 .btn-remove:hover {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  color: #dc2626;
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
+  color: var(--color-danger-text);
 }
 
 /* ===== Pulsante azione principale ===== */
@@ -275,7 +428,7 @@ main {
 }
 
 .btn-primary {
-  background: #4a6cf7;
+  background: var(--color-accent);
   color: #fff;
   border: none;
   border-radius: 8px;
@@ -287,7 +440,7 @@ main {
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: #3757e8;
+  background: var(--color-accent-hover);
 }
 
 .btn-primary:disabled {
@@ -297,10 +450,10 @@ main {
 
 /* ===== Area stato ===== */
 .status-area {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 20px 24px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--color-shadow);
 }
 
 .status-message {
@@ -308,16 +461,16 @@ main {
   font-weight: 500;
 }
 
-.status-message.info    { color: #2563eb; }
-.status-message.success { color: #16a34a; }
-.status-message.error   { color: #dc2626; }
-.status-message.warning { color: #d97706; }
+.status-message.info    { color: var(--color-status-info); }
+.status-message.success { color: var(--color-status-success); }
+.status-message.error   { color: var(--color-status-error); }
+.status-message.warning { color: var(--color-status-warning); }
 
 .not-found-list {
   margin-top: 12px;
   padding-left: 20px;
   font-size: 13px;
-  color: #d97706;
+  color: var(--color-status-warning);
 }
 
 .not-found-list li {
@@ -327,20 +480,20 @@ main {
 .status-warning {
   margin-top: 8px;
   padding: 10px 14px;
-  background: #fffbeb;
-  border: 1px solid #f59e0b;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
   border-radius: 6px;
-  color: #92400e;
+  color: var(--color-warning-text);
   font-size: 13px;
 }
 
 /* ===== Steps ===== */
 #view-step1,
 #view-step2 {
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 12px;
   padding: 28px 32px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  box-shadow: 0 1px 4px var(--color-shadow);
   margin-bottom: 20px;
   display: flex;
   flex-direction: column;
@@ -356,7 +509,7 @@ main {
 .step-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--color-text);
 }
 
 .step2-actions {
@@ -365,9 +518,9 @@ main {
 
 /* ===== Pulsante secondario ===== */
 .btn-secondary {
-  background: #fff;
-  color: #4a6cf7;
-  border: 1px solid #4a6cf7;
+  background: var(--color-surface);
+  color: var(--color-accent);
+  border: 1px solid var(--color-accent);
   border-radius: 8px;
   padding: 10px 24px;
   font-size: 14px;
@@ -377,14 +530,14 @@ main {
 }
 
 .btn-secondary:hover {
-  background: #eef2ff;
+  background: var(--color-accent-bg);
 }
 
 /* ===== Pulsante pericolo (rimozione batch) ===== */
 .btn-danger {
-  background: #fee2e2;
-  color: #dc2626;
-  border: 1px solid #fca5a5;
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border: 1px solid var(--color-danger-border);
   border-radius: 8px;
   padding: 8px 20px;
   font-size: 13px;
@@ -394,7 +547,7 @@ main {
 }
 
 .btn-danger:hover {
-  background: #fecaca;
+  background: var(--color-danger-hover);
 }
 
 .bulk-remove-row {
@@ -405,7 +558,7 @@ main {
 /* ===== Drag handle ===== */
 .drag-handle {
   cursor: grab;
-  color: #a0aec0;
+  color: var(--color-drag-handle);
   font-size: 16px;
   padding: 0 4px;
   flex-shrink: 0;
@@ -417,22 +570,22 @@ main {
 }
 
 .attachment-item.drag-over {
-  border-color: #4a6cf7;
-  background: #eef2ff;
+  border-color: var(--color-accent);
+  background: var(--color-accent-bg);
   box-shadow: 0 0 0 2px rgba(74,108,247,0.25);
 }
 
 .attachment-item.dragging {
   opacity: 0.4;
-  background: #e0e7ff;
-  border: 2px dashed #4a6cf7;
+  background: var(--color-drag-item-bg);
+  border: 2px dashed var(--color-accent);
   transform: scale(0.98);
 }
 
 /* ===== Multi-selezione ===== */
 .attachment-item.selected {
-  background: #dbeafe;
-  border-color: #93c5fd;
+  background: var(--color-selected-bg);
+  border-color: var(--color-accent-mid);
 }
 
 /* ===== Modale di preview ===== */
@@ -443,23 +596,25 @@ main {
   border: none;
   border-radius: 12px;
   padding: 28px 32px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  box-shadow: 0 8px 32px var(--color-shadow-modal);
+  background: var(--color-surface);
+  color: var(--color-text);
 }
 
 #modal-preview::backdrop {
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--color-backdrop);
 }
 
 .modal-title {
   font-size: 16px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--color-text);
   margin-bottom: 10px;
 }
 
 .modal-subtitle {
   font-size: 13px;
-  color: #718096;
+  color: var(--color-text-muted);
   margin-bottom: 8px;
 }
 
@@ -484,16 +639,16 @@ main {
 .preview-table th {
   text-align: left;
   padding: 6px 8px;
-  background: #f5f7fa;
-  border-bottom: 2px solid #e2e8f0;
-  color: #4a5568;
+  background: var(--color-table-header);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-faint);
   font-weight: 600;
 }
 
 .preview-table td {
   padding: 6px 8px;
-  border-bottom: 1px solid #e2e8f0;
-  color: #1a1a2e;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
 }
 
 .preview-table tr:last-child td {
@@ -504,4 +659,19 @@ main {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* ===== Anteprima PDF ===== */
+.pdf-preview-container {
+  margin-top: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  overflow: hidden;
+  height: 280px;
+}
+
+.pdf-preview-embed {
+  width: 100%;
+  height: 100%;
+  border: none;
 }

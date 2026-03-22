@@ -77,6 +77,43 @@ const previewMainPdf      = document.getElementById('preview-main-pdf');
 const previewTbody        = document.getElementById('preview-tbody');
 const btnModalCancel      = document.getElementById('btn-modal-cancel');
 const btnModalConfirm     = document.getElementById('btn-modal-confirm');
+const btnThemeToggle      = document.getElementById('btn-theme-toggle');
+
+// ===== Dark mode =====
+
+/**
+ * Inizializza il tema all'avvio leggendo localStorage.
+ * Se assente, usa prefers-color-scheme del sistema.
+ */
+function initTheme() {
+  let theme;
+  try {
+    theme = localStorage.getItem('theme');
+  } catch {
+    // localStorage non disponibile — fallback silenzioso
+  }
+  if (!theme) {
+    theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  }
+  document.documentElement.setAttribute('data-theme', theme);
+  if (btnThemeToggle) btnThemeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+
+initTheme();
+
+if (btnThemeToggle) {
+  btnThemeToggle.addEventListener('click', () => {
+    const current = document.documentElement.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    btnThemeToggle.textContent = next === 'dark' ? '☀️' : '🌙';
+    try {
+      localStorage.setItem('theme', next);
+    } catch {
+      // localStorage non disponibile — fallback silenzioso
+    }
+  });
+}
 
 // ===== Numero di partenza e rinomina allegati =====
 
