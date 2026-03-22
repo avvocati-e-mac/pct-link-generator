@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer, webUtils } from 'electron';
 
 /**
  * Espone un'API minimale e sicura al Renderer tramite contextBridge.
@@ -21,4 +21,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {Promise<string|null>} Percorso scelto o null se annullato.
    */
   selectOutputFolder: () => ipcRenderer.invoke('dialog:selectOutputFolder'),
+
+  /**
+   * Restituisce il percorso assoluto di un File object droppato nel renderer.
+   * Necessario perché con contextIsolation il renderer non ha accesso a Node.js.
+   *
+   * @param {File} file - Il File object dall'evento drop
+   * @returns {string} Percorso assoluto del file
+   */
+  getPathForFile: (file) => webUtils.getPathForFile(file),
 });

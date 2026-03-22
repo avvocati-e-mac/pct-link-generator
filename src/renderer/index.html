@@ -1,1 +1,79 @@
-<!-- Placeholder — implementato nel Commit 4 -->
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'" />
+  <title>PCT Link Generator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header>
+    <h1>PCT Link Generator</h1>
+    <p class="subtitle">Aggiungi link cliccabili agli allegati nel tuo atto PCT</p>
+  </header>
+
+  <main>
+    <div class="columns">
+
+      <!-- Colonna 1: Atto principale -->
+      <section class="column" id="section-main-pdf">
+        <h2>Atto Principale</h2>
+        <p class="column-desc">Trascina qui il PDF dell'atto principale (un solo file)</p>
+
+        <div class="drop-zone" id="drop-zone-main" role="button" tabindex="0"
+             aria-label="Zona drop per l'atto principale PDF">
+          <div class="drop-zone-inner">
+            <span class="drop-icon">📄</span>
+            <span class="drop-text">Trascina il PDF qui<br />o clicca per selezionare</span>
+          </div>
+          <input type="file" id="input-main-pdf" accept=".pdf" hidden />
+        </div>
+
+        <div class="file-info" id="main-pdf-info" hidden>
+          <div class="file-info-row">
+            <span class="file-icon">📄</span>
+            <span class="file-name" id="main-pdf-name"></span>
+            <button class="btn-remove" id="btn-remove-main" aria-label="Rimuovi atto principale">✕</button>
+          </div>
+          <span class="file-path" id="main-pdf-path"></span>
+        </div>
+      </section>
+
+      <!-- Colonna 2: Allegati -->
+      <section class="column" id="section-attachments">
+        <h2>Allegati</h2>
+        <p class="column-desc">Trascina qui i file allegati (PDF, EML, MSG, JPG) — più sessioni supportate</p>
+
+        <div class="drop-zone" id="drop-zone-attachments" role="button" tabindex="0"
+             aria-label="Zona drop per gli allegati">
+          <div class="drop-zone-inner">
+            <span class="drop-icon">📎</span>
+            <span class="drop-text">Trascina allegati qui<br />o clicca per selezionare</span>
+          </div>
+          <input type="file" id="input-attachments"
+                 accept=".pdf,.eml,.msg,.jpg,.jpeg" multiple hidden />
+        </div>
+
+        <ul class="attachments-list" id="attachments-list" aria-label="Lista allegati"></ul>
+      </section>
+    </div>
+
+    <!-- Pulsante azione -->
+    <div class="action-row">
+      <button class="btn-primary" id="btn-generate" disabled>
+        Genera Link
+      </button>
+    </div>
+
+    <!-- Area messaggi di stato -->
+    <div class="status-area" id="status-area" hidden>
+      <div class="status-message" id="status-message"></div>
+      <ul class="not-found-list" id="not-found-list" hidden></ul>
+    </div>
+  </main>
+
+  <script src="renderer.js" type="module"></script>
+</body>
+</html>
