@@ -623,13 +623,13 @@ async function runGeneration() {
 
     if (result.notFound.length > 0) {
       setStatus('warning',
-        `Completato con avvisi: ${result.processedAnnotations} annotazioni aggiunte. ` +
-        `Le seguenti etichette non sono state trovate nel PDF:`
+        `Completato con avvisi: ${result.processedAnnotations} link inseriti. ` +
+        `I seguenti allegati non sono stati trovati nell'atto (nessun link creato per questi):`
       );
       showNotFound(result.notFound);
     } else {
       setStatus('success',
-        `Completato ✓ — ${result.processedAnnotations} annotazioni aggiunte. ` +
+        `Completato ✓ — ${result.processedAnnotations} link agli allegati inseriti nell'atto. ` +
         `File salvati in: ${outputFolder}`
       );
     }

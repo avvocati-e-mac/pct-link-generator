@@ -104,8 +104,8 @@ function registerIpcHandlers() {
       `notFound: ${result.notFound.length}`
     );
     const notifBody = result.notFound.length > 0
-      ? `Completato con avvisi: ${result.notFound.length} etichette non trovate.`
-      : `Completato — ${result.processedAnnotations} annotazioni aggiunte.`;
+      ? `${result.notFound.length} allegati non trovati nell'atto — controlla che i riferimenti siano presenti nel testo.`
+      : `Completato — ${result.processedAnnotations} link agli allegati inseriti nell'atto.`;
     new Notification({ title: 'PCT Link Generator', body: notifBody }).show();
     return result;
   });
