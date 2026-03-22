@@ -1,6 +1,16 @@
 # PCT Link Generator
 
+<p align="center">
+  <img src="immagini/app-icon.png" alt="PCT Link Generator icon" width="120" />
+</p>
+
 App desktop per aggiungere link cliccabili agli allegati negli atti PCT — creata da un avvocato, con l'aiuto dell'intelligenza artificiale (vibe coding), senza conoscenze di programmazione.
+
+<p align="center">
+  <img src="immagini/screenshot-step1-dark.jpeg" alt="PCT Link Generator — step 1 dark mode" width="480" />
+  &nbsp;
+  <img src="immagini/screenshot-step1-light.jpeg" alt="PCT Link Generator — step 1 light mode" width="320" />
+</p>
 
 ---
 
@@ -155,7 +165,7 @@ npm start
 npm test
 ```
 
-77 test Vitest, tutti verdi.
+78 test Vitest, tutti verdi.
 
 ### Struttura
 
@@ -186,8 +196,9 @@ tests/
 - [x] Fase 6b — Regex sinonimi italiani PCT, prefisso obbligatorio, rilevamento bis/ter
 - [x] Fase 6c — Dark mode, anteprima PDF, startIndex, rinomina allegati, verifica natività
 - [x] Fase 6d — Anteprima PDF via mupdf (immagine adattiva, navigazione multi-pagina), pulsante Esci
-- [ ] Fase 7 — Packaging (electron-builder, DMG/EXE)
-- [ ] Fase 8 — UX (progress bar, notifiche native, apertura cartella output)
+- [x] Fase 7 — UX: progress bar indeterminata, notifica nativa al termine, apertura cartella output, pulsante Esci, step indicator nel header
+- [x] Fase 7b — UI polish: layout 2 colonne responsive nello step 1, anteprima PDF a tutta larghezza, pulsanti step 2 e 3 riposizionati, step 3 con pulsante ← Indietro
+- [ ] Fase 8 — Packaging (electron-builder, DMG/EXE)
 
 ### Note tecniche
 

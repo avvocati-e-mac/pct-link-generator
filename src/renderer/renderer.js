@@ -35,6 +35,9 @@ let lastClickedId = null;
 /** @type {string|null} ID dell'allegato in fase di drag */
 let draggingId = null;
 
+/** @type {string|null} Percorso cartella di output dell'ultima elaborazione */
+let lastOutputFolder = null;
+
 // ===== Rilevamento OS (per Cmd vs Ctrl) =====
 const isMac = navigator.platform.includes('Mac');
 
@@ -54,9 +57,12 @@ const ACCEPTED_EXTENSIONS = [
 
 const viewStep1           = document.getElementById('view-step1');
 const viewStep2           = document.getElementById('view-step2');
+const viewStep3           = document.getElementById('view-step3');
+const dragHintBar         = document.getElementById('drag-hint-bar');
 
 const dropZoneMain        = document.getElementById('drop-zone-main');
 const inputMainPdf        = document.getElementById('input-main-pdf');
+const step1LoadedLayout   = document.getElementById('step1-loaded-layout');
 const mainPdfInfo         = document.getElementById('main-pdf-info');
 const mainPdfNameEl       = document.getElementById('main-pdf-name');
 const mainPdfPathEl       = document.getElementById('main-pdf-path');
@@ -74,11 +80,19 @@ const btnRemoveSelected   = document.getElementById('btn-remove-selected');
 const inputStartIndex     = document.getElementById('input-start-index');
 const renameSchemeSelect  = document.getElementById('rename-scheme');
 
+const siStep1             = document.getElementById('si-step1');
+const siStep2             = document.getElementById('si-step2');
+const siStep3             = document.getElementById('si-step3');
+const siConn1             = document.getElementById('si-conn1');
+const siConn2             = document.getElementById('si-conn2');
+
 const statusArea          = document.getElementById('status-area');
+const progressBar         = document.getElementById('progress-bar');
 const statusMessage       = document.getElementById('status-message');
 const notFoundList        = document.getElementById('not-found-list');
-const statusActions       = document.getElementById('status-actions');
+const btnOpenOutput       = document.getElementById('btn-open-output');
 const btnQuit             = document.getElementById('btn-quit');
+const btnBackStep3        = document.getElementById('btn-back-step3');
 
 const modalPreview        = document.getElementById('modal-preview');
 const previewMainPdf      = document.getElementById('preview-main-pdf');
@@ -215,19 +229,33 @@ function buildRenamedName(originalName, scheme, index, total) {
 // ===== Navigazione Step 1 ↔ Step 2 =====
 
 /**
- * Mostra lo step 1 (atto principale), nasconde lo step 2.
+ * Mostra lo step 1 (atto principale), nasconde gli altri step.
  */
 function showStep1() {
   viewStep1.classList.remove('hidden');
   viewStep2.classList.add('hidden');
+  viewStep3.classList.add('hidden');
+  updateStepIndicator(1);
 }
 
 /**
- * Mostra lo step 2 (allegati), nasconde lo step 1.
+ * Mostra lo step 2 (allegati), nasconde gli altri step.
  */
 function showStep2() {
   viewStep1.classList.add('hidden');
   viewStep2.classList.remove('hidden');
+  viewStep3.classList.add('hidden');
+  updateStepIndicator(2);
+}
+
+/**
+ * Mostra lo step 3 (risultato), nasconde gli altri step.
+ */
+function showStep3() {
+  viewStep1.classList.add('hidden');
+  viewStep2.classList.add('hidden');
+  viewStep3.classList.remove('hidden');
+  updateStepIndicator(3);
 }
 
 btnNext.addEventListener('click', () => {
@@ -236,6 +264,10 @@ btnNext.addEventListener('click', () => {
 
 btnBack.addEventListener('click', () => {
   showStep1();
+});
+
+btnBackStep3.addEventListener('click', () => {
+  showStep2();
 });
 
 // ===== Drag & drop: atto principale =====
@@ -272,7 +304,7 @@ function setMainPdf(file) {
   mainPdfPath = window.electronAPI.getPathForFile(file);
   mainPdfNameEl.textContent = file.name;
   mainPdfPathEl.textContent = mainPdfPath;
-  mainPdfInfo.classList.remove('hidden');
+  step1LoadedLayout.classList.remove('hidden');
   dropZoneMain.classList.add('hidden');
   updateNextButton();
 
@@ -287,9 +319,8 @@ function setMainPdf(file) {
  */
 function clearMainPdf() {
   mainPdfPath = null;
-  mainPdfInfo.classList.add('hidden');
+  step1LoadedLayout.classList.add('hidden');
   dropZoneMain.classList.remove('hidden');
-  pdfPreviewContainer.classList.add('hidden');
   pdfPreviewImg.src = '';
   currentPage = 0;
   totalPdfPages = 1;
@@ -496,6 +527,13 @@ function attachDragHandlers(li, handle, id) {
  * Il numero di posizione (1-based) è la label che verrà passata al processore.
  */
 function renderAttachmentsList() {
+  // Mostra il drag hint bar solo quando ci sono almeno 2 allegati
+  if (attachments.length >= 2) {
+    dragHintBar.classList.remove('hidden');
+  } else {
+    dragHintBar.classList.add('hidden');
+  }
+
   attachmentsList.innerHTML = '';
   attachments.forEach((att, idx) => {
     const li = document.createElement('li');
@@ -588,8 +626,12 @@ async function runGeneration() {
   const outputFolder = await window.electronAPI.selectOutputFolder();
   if (!outputFolder) return; // utente ha annullato
 
-  // 2. Avvia elaborazione
+  lastOutputFolder = outputFolder;
+
+  // 2. Avvia elaborazione — mostra step 3 con progress
+  showStep3();
   setStatus('info', 'Elaborazione in corso…');
+  progressBar.classList.remove('hidden');
   btnGenerate.disabled = true;
 
   try {
@@ -611,20 +653,20 @@ async function runGeneration() {
       outputFolder,
     });
 
+    progressBar.classList.add('hidden');
+
     if (result.notFound.length > 0) {
       setStatus('warning',
-        `Completato con avvisi: ${result.processedAnnotations} annotazioni aggiunte. ` +
-        `Le seguenti etichette non sono state trovate nel PDF:`
+        `Completato con avvisi: ${result.processedAnnotations} link inseriti. ` +
+        `I seguenti allegati non sono stati trovati nell'atto (nessun link creato per questi):`
       );
       showNotFound(result.notFound);
     } else {
       setStatus('success',
-        `Completato ✓ — ${result.processedAnnotations} annotazioni aggiunte. ` +
+        `Completato ✓ — ${result.processedAnnotations} link agli allegati inseriti nell'atto. ` +
         `File salvati in: ${outputFolder}`
       );
     }
-    statusActions.classList.remove('hidden');
-
     // Avviso bassa densità testo (possibile OCR superficiale) — non bloccante
     if (result.warning === 'PDF_LOW_TEXT_DENSITY') {
       const warnOcr = document.createElement('p');
@@ -641,6 +683,7 @@ async function runGeneration() {
       statusArea.appendChild(warning);
     }
   } catch (err) {
+    progressBar.classList.add('hidden');
     setStatus('error', `Errore durante l'elaborazione: ${err.message}`);
   } finally {
     updateGenerateButton();
@@ -661,24 +704,68 @@ function setStatus(type, text) {
   statusMessage.textContent = text;
   notFoundList.classList.add('hidden');
   notFoundList.innerHTML = '';
-  statusActions.classList.add('hidden');
   // Rimuovi eventuali avvisi bis/ter dal ciclo precedente
   statusArea.querySelectorAll('.status-warning').forEach(el => el.remove());
+  // Sfondo verde su successo, rimosso su info/warning/error
+  if (type === 'success') {
+    viewStep3.classList.add('has-success');
+  } else {
+    viewStep3.classList.remove('has-success');
+  }
+  if (type === 'success' || type === 'warning') updateStepIndicator(3);
 }
 
 /**
- * Mostra la lista di etichette non trovate.
+ * Trasforma una label notFound nel formato "N — nome_file.ext"
+ * in una frase leggibile per l'utente finale.
+ *
+ * @param {string} label - Es. "21 — 20_Indice_Allegati.xml"
+ * @returns {string} HTML già escapato
+ */
+function formatNotFoundLabel(label) {
+  const match = label.match(/^(\d+)\s+—\s+(.+)$/);
+  if (match) {
+    const num  = escapeHtml(match[1]);
+    const name = escapeHtml(match[2]);
+    return `Il documento ${num} (${name}) non è stato trovato nell'atto principale`;
+  }
+  return escapeHtml(label);
+}
+
+/**
+ * Aggiorna l'indicatore di step visivo.
+ * @param {1|2|3} activeStep - Step corrente
+ */
+function updateStepIndicator(activeStep) {
+  [[siStep1, 1], [siStep2, 2], [siStep3, 3]].forEach(([el, n]) => {
+    el.classList.remove('active', 'completed');
+    const circle = el.querySelector('.si-circle');
+    if (n < activeStep)      { el.classList.add('completed'); circle.textContent = '✓'; }
+    else if (n === activeStep) { el.classList.add('active');    circle.textContent = String(n); }
+    else                       { circle.textContent = String(n); }
+  });
+  [siConn1, siConn2].forEach((el, i) => {
+    el.classList.toggle('completed', i + 1 < activeStep);
+  });
+}
+
+/**
+ * Mostra la lista di allegati non trovati nell'atto.
  * @param {string[]} labels
  */
 function showNotFound(labels) {
   notFoundList.classList.remove('hidden');
-  notFoundList.innerHTML = labels
-    .map(l => `<li>${escapeHtml(l)}</li>`)
-    .join('');
+  notFoundList.innerHTML = labels.map(l => `<li>${formatNotFoundLabel(l)}</li>`).join('');
 }
 
 btnQuit.addEventListener('click', () => {
   window.electronAPI.quitApp();
+});
+
+btnOpenOutput.addEventListener('click', async () => {
+  if (lastOutputFolder) {
+    await window.electronAPI.openPath(lastOutputFolder);
+  }
 });
 
 /**
@@ -694,3 +781,6 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// Stato iniziale step indicator
+updateStepIndicator(1);

@@ -14,6 +14,25 @@
       <h1>PCT Link Generator</h1>
       <p class="subtitle">Aggiungi link cliccabili agli allegati nel tuo atto PCT</p>
     </div>
+
+    <!-- ===== Step indicator (nel header) ===== -->
+    <div class="step-indicator" id="step-indicator">
+      <div class="step-indicator-item active" id="si-step1">
+        <span class="si-circle">1</span>
+        <span class="si-label">Atto principale</span>
+      </div>
+      <div class="si-connector" id="si-conn1"></div>
+      <div class="step-indicator-item" id="si-step2">
+        <span class="si-circle">2</span>
+        <span class="si-label">Allegati</span>
+      </div>
+      <div class="si-connector" id="si-conn2"></div>
+      <div class="step-indicator-item" id="si-step3">
+        <span class="si-circle">3</span>
+        <span class="si-label">Generazione</span>
+      </div>
+    </div>
+
     <button id="btn-theme-toggle" aria-label="Attiva/disattiva dark mode" class="btn-theme-toggle">🌙</button>
   </header>
 
@@ -21,8 +40,14 @@
 
     <!-- ===== Step 1: Atto principale ===== -->
     <section id="view-step1">
-      <h2 class="step-title">Step 1 — Atto Principale</h2>
-      <p class="column-desc">Trascina qui il PDF dell'atto principale (un solo file)</p>
+      <h2 class="step-title">Carica l'atto principale</h2>
+      <p class="step-subtitle">Trascina qui il PDF dell'atto principale (un solo file). Questo è il documento che riceverà i link cliccabili agli allegati.</p>
+
+      <div class="action-row">
+        <button class="btn-primary" id="btn-next" disabled>
+          Avanti →
+        </button>
+      </div>
 
       <div class="drop-zone" id="drop-zone-main" role="button" tabindex="0"
            aria-label="Zona drop per l'atto principale PDF">
@@ -33,55 +58,77 @@
         <input type="file" id="input-main-pdf" accept=".pdf" hidden />
       </div>
 
-      <div class="file-info hidden" id="main-pdf-info">
-        <div class="file-info-row">
-          <span class="file-icon">📄</span>
-          <span class="file-name" id="main-pdf-name"></span>
-          <button class="btn-remove" id="btn-remove-main" aria-label="Rimuovi atto principale">✕</button>
-        </div>
-        <span class="file-path" id="main-pdf-path"></span>
-        <div class="pdf-preview-container hidden" id="pdf-preview-container">
-          <img id="pdf-preview-img" class="pdf-preview-img" alt="Anteprima atto principale" />
-          <div class="pdf-nav" id="pdf-nav">
-            <button class="btn-pdf-nav" id="btn-pdf-prev" aria-label="Pagina precedente">‹</button>
-            <span class="pdf-page-indicator" id="pdf-page-indicator">1 / 1</span>
-            <button class="btn-pdf-nav" id="btn-pdf-next" aria-label="Pagina successiva">›</button>
+      <div class="step1-loaded-layout hidden" id="step1-loaded-layout">
+        <!-- Colonna sx: nome file + path -->
+        <div class="step1-left">
+          <div class="file-info" id="main-pdf-info">
+            <div class="file-info-row">
+              <span class="file-icon">📄</span>
+              <span class="file-name" id="main-pdf-name"></span>
+            </div>
+            <span class="file-path" id="main-pdf-path"></span>
           </div>
         </div>
-      </div>
-
-      <div class="action-row">
-        <button class="btn-primary" id="btn-next" disabled>
-          Avanti →
-        </button>
+        <!-- Colonna dx: hint + ✕ + anteprima -->
+        <div class="step1-right">
+          <div class="step1-remove-row">
+            <span class="file-hint-inline">Clicca ✕ per rimuovere o sostituire</span>
+            <button class="btn-remove btn-remove-danger" id="btn-remove-main" aria-label="Rimuovi atto principale">✕</button>
+          </div>
+          <div class="pdf-preview-container" id="pdf-preview-container">
+            <img id="pdf-preview-img" class="pdf-preview-img" alt="Anteprima atto principale" />
+            <div class="pdf-nav" id="pdf-nav">
+              <button class="btn-pdf-nav" id="btn-pdf-prev" aria-label="Pagina precedente">‹</button>
+              <span class="pdf-page-indicator" id="pdf-page-indicator">1 / 1</span>
+              <button class="btn-pdf-nav" id="btn-pdf-next" aria-label="Pagina successiva">›</button>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- ===== Step 2: Allegati ===== -->
     <section id="view-step2" class="hidden">
-      <h2 class="step-title">Step 2 — Allegati</h2>
-      <p class="column-desc">Trascina qui i file allegati — formati PCT 2024 supportati (PDF, RTF, immagini, video, audio, testo, email, zip) — più sessioni supportate</p>
+      <h2 class="step-title">Aggiungi gli allegati</h2>
+      <p class="step-subtitle">Trascina qui i file allegati — formati PCT 2024 supportati. Puoi aggiungere file in più sessioni.</p>
 
-      <div class="start-index-row">
-        <label for="input-start-index">Numero primo allegato:</label>
+      <div class="form-field">
+        <label class="form-label" for="input-start-index">Numero del primo allegato</label>
         <input type="number" id="input-start-index" min="1" value="1" class="start-index-input" />
+        <p class="form-hint">Il numero con cui inizia la numerazione degli allegati nell'atto. Di solito è 1 — controlla il tuo atto per verificarlo.</p>
       </div>
 
-      <div class="rename-scheme-row">
-        <label for="rename-scheme">Rinomina allegati nell'output:</label>
+      <div class="form-field">
+        <label class="form-label" for="rename-scheme">Rinomina i file nella cartella di output</label>
         <select id="rename-scheme" class="rename-scheme-select">
-          <option value="none">Nessuna rinomina</option>
-          <option value="numbered">01, 02, 03…</option>
-          <option value="doc_">doc_01, doc_02…</option>
-          <option value="allegato_">allegato_01, allegato_02…</option>
+          <option value="none">Non rinominare — mantieni i nomi originali</option>
+          <option value="numbered">Aggiungi numero (es. 01_NomeFile.pdf)</option>
+          <option value="doc_">Prefisso "doc_" (es. doc_01_NomeFile.pdf)</option>
+          <option value="allegato_">Prefisso "allegato_" (es. allegato_01_NomeFile.pdf)</option>
         </select>
+        <p class="form-hint">I file originali non vengono mai modificati — la rinomina è applicata solo alla copia nella cartella di output.</p>
+      </div>
+
+      <div class="action-row step2-actions">
+        <button class="btn-secondary" id="btn-back">← Indietro</button>
+        <button class="btn-primary" id="btn-generate" disabled>
+          Genera link
+        </button>
       </div>
 
       <div class="drop-zone" id="drop-zone-attachments" role="button" tabindex="0"
            aria-label="Zona drop per gli allegati">
         <div class="drop-zone-inner">
           <span class="drop-icon">📎</span>
-          <span class="drop-text">Trascina allegati qui<br />o clicca per selezionare</span>
+          <span class="drop-text-main">Trascina allegati qui<br />o clicca per selezionare</span>
+          <div class="drop-formats">
+            <span class="fmt-badge fmt-pdf">PDF</span>
+            <span class="fmt-badge fmt-rtf">RTF</span>
+            <span class="fmt-badge fmt-img">JPG · PNG · TIF · BMP</span>
+            <span class="fmt-badge fmt-email">EML · MSG</span>
+            <span class="fmt-badge fmt-xml">XML · HTML · TXT</span>
+            <span class="fmt-badge fmt-media">MP4 · MP3 · ZIP</span>
+          </div>
         </div>
         <input type="file" id="input-attachments"
                accept=".pdf,.rtf,.jpg,.jpeg,.tif,.tiff,.gif,.dcm,.mp4,.m4v,.mov,.mpg,.mpeg,.avi,.mp3,.flac,.raw,.wav,.aiff,.aif,.txt,.xml,.html,.htm,.eml,.msg,.zip,.rar,.arj"
@@ -93,24 +140,30 @@
         <button class="btn-danger" id="btn-remove-selected">Rimuovi selezionati</button>
       </div>
 
-      <ul class="attachments-list" id="attachments-list" aria-label="Lista allegati"></ul>
-
-      <div class="action-row step2-actions">
-        <button class="btn-secondary" id="btn-back">← Indietro</button>
-        <button class="btn-primary" id="btn-generate" disabled>
-          Genera link
-        </button>
+      <div class="drag-hint-bar hidden" id="drag-hint-bar">
+        Trascina <span class="drag-hint-icon">⠿</span> per riordinare gli allegati
       </div>
+
+      <ul class="attachments-list" id="attachments-list" aria-label="Lista allegati"></ul>
     </section>
 
-    <!-- Area messaggi di stato -->
-    <div class="status-area hidden" id="status-area">
-      <div class="status-message" id="status-message"></div>
-      <ul class="not-found-list hidden" id="not-found-list"></ul>
-      <div class="status-actions hidden" id="status-actions">
+    <!-- ===== Step 3: Risultato generazione ===== -->
+    <section id="view-step3" class="hidden">
+      <div class="status-area" id="status-area">
+        <div class="progress-bar hidden" id="progress-bar">
+          <div class="progress-bar-track">
+            <div class="progress-bar-fill"></div>
+          </div>
+        </div>
+        <div class="status-message" id="status-message"></div>
+        <ul class="not-found-list hidden" id="not-found-list"></ul>
+      </div>
+      <div class="action-row step3-actions">
+        <button class="btn-secondary" id="btn-back-step3">← Indietro</button>
+        <button class="btn-secondary" id="btn-open-output">Apri cartella</button>
         <button class="btn-secondary" id="btn-quit">Esci dall'app</button>
       </div>
-    </div>
+    </section>
 
   </main>
 
@@ -125,7 +178,7 @@
         <tr>
           <th>N.</th>
           <th>File</th>
-          <th>Etichetta di ricerca</th>
+          <th>Link ad allegato</th>
         </tr>
       </thead>
       <tbody id="preview-tbody"></tbody>

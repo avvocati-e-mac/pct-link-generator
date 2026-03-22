@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Notification } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -18,7 +18,9 @@ let mainWindow = null;
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1000,
-    height: 700,
+    height: 780,
+    minWidth: 800,
+    minHeight: 620,
     show: false,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -103,7 +105,22 @@ function registerIpcHandlers() {
       `[IPC] pdf:process completato: ${result.processedAnnotations} annotazioni, ` +
       `notFound: ${result.notFound.length}`
     );
+    const notifBody = result.notFound.length > 0
+      ? `${result.notFound.length} allegati non trovati nell'atto — controlla che i riferimenti siano presenti nel testo.`
+      : `Completato — ${result.processedAnnotations} link agli allegati inseriti nell'atto.`;
+    new Notification({ title: 'PCT Link Generator', body: notifBody }).show();
     return result;
+  });
+
+  /**
+   * Apre una cartella nel file manager di sistema (Finder/Explorer).
+   *
+   * @param {Electron.IpcMainInvokeEvent} _event
+   * @param {string} folderPath - Percorso assoluto della cartella da aprire
+   * @returns {Promise<void>}
+   */
+  ipcMain.handle(IPC_CHANNELS.OPEN_PATH, async (_event, folderPath) => {
+    await shell.openPath(folderPath);
   });
 }
 

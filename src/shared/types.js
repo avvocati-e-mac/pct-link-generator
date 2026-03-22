@@ -15,6 +15,7 @@ export const IPC_CHANNELS = {
   DIALOG_SELECT_FOLDER: 'dialog:selectOutputFolder',
 RENDER_PDF_PAGE:      'render-pdf-page',
   QUIT_APP:             'app:quit',
+  OPEN_PATH:            'shell:openPath',
 };
 
 /**
