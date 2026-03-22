@@ -178,29 +178,28 @@ main {
   border: 1px solid #e2e8f0;
   border-radius: 8px;
   padding: 10px 12px;
-  display: flex;
+  display: grid;
+  grid-template-columns: [drag] 24px [number] 36px [name] 1fr [controls] auto;
   align-items: center;
   gap: 8px;
   transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.12s;
 }
 
+.attachment-item .att-number {
+  color: #1a9be8;
+  font-weight: 600;
+  font-size: 0.9em;
+  text-align: right;
+  align-self: center;
+}
+
 .attachment-item .att-name {
-  flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 600;
   font-size: 12px;
-}
-
-.attachment-item .att-label {
-  font-size: 13px;
-  color: #4a5568;
-  font-weight: 600;
-  min-width: 32px;
-  text-align: center;
-  flex-shrink: 0;
 }
 
 .attachment-controls {

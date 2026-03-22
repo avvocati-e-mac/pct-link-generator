@@ -359,8 +359,8 @@ function renderAttachmentsList() {
 
     li.innerHTML = `
       <span class="drag-handle" draggable="true" aria-label="Trascina per riordinare">⠿</span>
+      <span class="att-number">${idx + 1}</span>
       <span class="att-name" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</span>
-      <span class="att-label">${idx + 1}</span>
       <div class="attachment-controls">
         <button class="btn-remove btn-del" aria-label="Rimuovi allegato">✕</button>
       </div>
