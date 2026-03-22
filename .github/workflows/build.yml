@@ -142,6 +142,16 @@ jobs:
             artifacts/mac-x64/*.dmg
             artifacts/windows-x64/*.exe
             artifacts/linux-x64/*.AppImage
+          body: |
+            ## Installazione su macOS
+
+            L'app non è notarizzata. Prima di avviarla, esegui nel Terminale:
+
+            ```bash
+            sudo xattr -cr /Applications/PCT\ Link\ Generator.app
+            ```
+
+            Questo comando rimuove l'attributo di quarantena imposto da macOS sui file scaricati da internet.
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}

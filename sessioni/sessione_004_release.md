@@ -37,6 +37,12 @@ fare il merge su master e pubblicare la prima release beta su GitHub.
 - ✅ Build Linux AppImage — completata su GitHub Actions
 - ✅ GitHub Release v0.1.1-beta pubblicata come Pre-release
 
+## Aggiornamenti post-test
+
+- Aggiunta nota quarantena macOS in `README.md` e nel body della GitHub Release (`build.yml`):
+  `sudo xattr -cr /Applications/PCT\ Link\ Generator.app`
+- L'app non è notarizzata → il comando è necessario al primo avvio su macOS
+
 ## Problemi noti / TODO prossima sessione
 
 - Warning GitHub Actions: Node.js 20 deprecato, da giugno 2026 servirà aggiornare

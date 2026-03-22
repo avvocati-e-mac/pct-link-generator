@@ -16,6 +16,20 @@ App desktop Electron per aggiungere annotazioni link cliccabili ai PDF degli att
 
 Zero connessioni di rete. Tutto elaborato offline. GDPR compliant.
 
+## Installazione su macOS (DMG)
+
+L'app non è notarizzata. Al primo avvio macOS la mette in quarantena e blocca l'apertura.
+
+**Prima di avviare l'app**, esegui questo comando nel Terminale:
+
+```bash
+sudo xattr -cr /Applications/PCT\ Link\ Generator.app
+```
+
+> Sostituisci il percorso se hai installato l'app in una cartella diversa da `/Applications`.
+
+Questo comando rimuove l'attributo di quarantena e permette l'avvio normale.
+
 ## Requisiti
 
 - Node.js 18+
