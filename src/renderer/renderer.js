@@ -338,6 +338,7 @@ function attachDragHandlers(li, handle, id) {
     attachments.splice(newIdx, 0, moved);
 
     draggingId = null;
+    console.log('[DRAG] Nuovo ordine:', attachments.map(a => a.name).join(', '));
     renderAttachmentsList();
   });
 }
