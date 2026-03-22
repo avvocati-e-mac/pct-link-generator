@@ -8,6 +8,8 @@ const IPC_CHANNELS = {
   PDF_PROCESS:          'pdf:process',
   DIALOG_SELECT_FOLDER: 'dialog:selectOutputFolder',
   READ_PDF_BASE64:      'read-pdf-as-base64',
+  RENDER_PDF_PAGE:      'render-pdf-page',
+  QUIT_APP:             'app:quit',
 };
 
 /**
@@ -49,4 +51,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {Promise<{ base64: string }>}
    */
   readPdfAsBase64: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.READ_PDF_BASE64, filePath),
+
+  /**
+   * Renderizza la prima pagina del PDF come JPEG e la restituisce come base64.
+   * Usato per l'anteprima nel renderer (immagine adattiva, senza viewer nativo).
+   *
+   * @param {string} filePath - Percorso assoluto del PDF
+   * @returns {Promise<{ base64: string }>}
+   */
+  renderPdfPage: (filePath, pageIndex = 0) => ipcRenderer.invoke(IPC_CHANNELS.RENDER_PDF_PAGE, { filePath, pageIndex }),
+
+  /**
+   * Chiude l'applicazione.
+   * @returns {Promise<void>}
+   */
+  quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
 });

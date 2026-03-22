@@ -8,6 +8,12 @@
 /** @type {string|null} Percorso assoluto del PDF atto principale */
 let mainPdfPath = null;
 
+/** @type {number} Indice pagina corrente nell'anteprima (0-based) */
+let currentPage = 0;
+
+/** @type {number} Numero totale di pagine del PDF caricato */
+let totalPdfPages = 1;
+
 /**
  * @typedef {Object} Attachment
  * @property {string} path - Percorso assoluto del file
@@ -71,6 +77,8 @@ const renameSchemeSelect  = document.getElementById('rename-scheme');
 const statusArea          = document.getElementById('status-area');
 const statusMessage       = document.getElementById('status-message');
 const notFoundList        = document.getElementById('not-found-list');
+const statusActions       = document.getElementById('status-actions');
+const btnQuit             = document.getElementById('btn-quit');
 
 const modalPreview        = document.getElementById('modal-preview');
 const previewMainPdf      = document.getElementById('preview-main-pdf');
@@ -79,7 +87,10 @@ const btnModalCancel      = document.getElementById('btn-modal-cancel');
 const btnModalConfirm     = document.getElementById('btn-modal-confirm');
 const btnThemeToggle      = document.getElementById('btn-theme-toggle');
 const pdfPreviewContainer = document.getElementById('pdf-preview-container');
-const pdfPreviewEmbed     = document.getElementById('pdf-preview-embed');
+const pdfPreviewImg       = document.getElementById('pdf-preview-img');
+const btnPdfPrev          = document.getElementById('btn-pdf-prev');
+const btnPdfNext          = document.getElementById('btn-pdf-next');
+const pdfPageIndicator    = document.getElementById('pdf-page-indicator');
 
 // ===== Dark mode =====
 
@@ -117,6 +128,36 @@ if (btnThemeToggle) {
   });
 }
 
+// ===== Anteprima PDF con navigazione pagine =====
+
+/**
+ * Renderizza una pagina del PDF e aggiorna l'anteprima e i controlli di navigazione.
+ * @param {number} pageIndex - Indice pagina 0-based
+ */
+async function renderPdfPagePreview(pageIndex) {
+  try {
+    const result = await window.electronAPI.renderPdfPage(mainPdfPath, pageIndex);
+    pdfPreviewImg.src = 'data:image/jpeg;base64,' + result.base64;
+    totalPdfPages = result.totalPages;
+    currentPage = pageIndex;
+    pdfPageIndicator.textContent = `${currentPage + 1} / ${totalPdfPages}`;
+    btnPdfPrev.disabled = currentPage === 0;
+    btnPdfNext.disabled = currentPage === totalPdfPages - 1;
+    pdfPreviewContainer.classList.remove('hidden');
+  } catch {
+    // Errore silenzioso — l'anteprima non è critica
+    pdfPreviewContainer.classList.add('hidden');
+  }
+}
+
+btnPdfPrev.addEventListener('click', () => {
+  if (currentPage > 0) renderPdfPagePreview(currentPage - 1);
+});
+
+btnPdfNext.addEventListener('click', () => {
+  if (currentPage < totalPdfPages - 1) renderPdfPagePreview(currentPage + 1);
+});
+
 // ===== Numero di partenza e rinomina allegati =====
 
 /**
@@ -143,6 +184,12 @@ function getStartIndex() {
 
 inputStartIndex.addEventListener('input', () => renderAttachmentsList());
 
+function stripLeadingNumber(name) {
+  return name
+    .replace(/^doc[-_]\d+[-_\s]?/i, '')
+    .replace(/^\d+[-_\s]/, '');
+}
+
 /**
  * Costruisce il nuovo nome file secondo lo schema di rinomina scelto.
  * Stessa logica di buildRenamedName in pdf-processor.js.
@@ -154,12 +201,13 @@ inputStartIndex.addEventListener('input', () => renderAttachmentsList());
  * @returns {string}
  */
 function buildRenamedName(originalName, scheme, index, total) {
+  const baseName = stripLeadingNumber(originalName);
   const padLen = total <= 9 ? 1 : total <= 99 ? 2 : 3;
   const padded = String(index).padStart(padLen, '0');
   switch (scheme) {
-    case 'numbered':  return `${padded}_${originalName}`;
-    case 'doc_':      return `doc_${padded}_${originalName}`;
-    case 'allegato_': return `allegato_${padded}_${originalName}`;
+    case 'numbered':  return `${padded}_${baseName}`;
+    case 'doc_':      return `doc_${padded}_${baseName}`;
+    case 'allegato_': return `allegato_${padded}_${baseName}`;
     default:          return originalName;
   }
 }
@@ -228,14 +276,10 @@ function setMainPdf(file) {
   dropZoneMain.classList.add('hidden');
   updateNextButton();
 
-  // Anteprima PDF — carica i primi 500KB come data URI (nessun blob:)
-  window.electronAPI.readPdfAsBase64(mainPdfPath).then((result) => {
-    pdfPreviewEmbed.src = 'data:application/pdf;base64,' + result.base64;
-    pdfPreviewContainer.classList.remove('hidden');
-  }).catch(() => {
-    // Errore silenzioso — l'anteprima non è critica
-    pdfPreviewContainer.classList.add('hidden');
-  });
+  // Anteprima PDF — renderizza la prima pagina (resetta sempre a pagina 1)
+  currentPage = 0;
+  totalPdfPages = 1;
+  renderPdfPagePreview(0);
 }
 
 /**
@@ -246,7 +290,9 @@ function clearMainPdf() {
   mainPdfInfo.classList.add('hidden');
   dropZoneMain.classList.remove('hidden');
   pdfPreviewContainer.classList.add('hidden');
-  pdfPreviewEmbed.src = '';
+  pdfPreviewImg.src = '';
+  currentPage = 0;
+  totalPdfPages = 1;
   updateNextButton();
 }
 
@@ -577,6 +623,7 @@ async function runGeneration() {
         `File salvati in: ${outputFolder}`
       );
     }
+    statusActions.classList.remove('hidden');
 
     // Avviso bassa densità testo (possibile OCR superficiale) — non bloccante
     if (result.warning === 'PDF_LOW_TEXT_DENSITY') {
@@ -614,6 +661,7 @@ function setStatus(type, text) {
   statusMessage.textContent = text;
   notFoundList.classList.add('hidden');
   notFoundList.innerHTML = '';
+  statusActions.classList.add('hidden');
   // Rimuovi eventuali avvisi bis/ter dal ciclo precedente
   statusArea.querySelectorAll('.status-warning').forEach(el => el.remove());
 }
@@ -628,6 +676,10 @@ function showNotFound(labels) {
     .map(l => `<li>${escapeHtml(l)}</li>`)
     .join('');
 }
+
+btnQuit.addEventListener('click', () => {
+  window.electronAPI.quitApp();
+});
 
 /**
  * Escapa caratteri HTML pericolosi per l'inserimento in innerHTML.

@@ -18,7 +18,7 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT — crea
 
 ## Come funziona?
 
-1. Trascini il PDF dell'atto principale (Step 1) — l'app mostra un'anteprima immediata del documento;
+1. Trascini il PDF dell'atto principale (Step 1) — l'app mostra un'anteprima sfogliabile del documento (con pulsanti ‹ / › per navigare le pagine);
 2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2);
 3. Scegli il numero di partenza (default: 1) e, se vuoi, uno schema di rinomina automatica dei file nell'output (es. `01_`, `doc_01_`, `allegato_01_`);
 4. Rivedi il riepilogo nella modale di anteprima prima di confermare;
@@ -155,7 +155,7 @@ npm start
 npm test
 ```
 
-77 test Vitest, tutti verdi (v0.2.0).
+77 test Vitest, tutti verdi.
 
 ### Struttura
 
@@ -185,6 +185,7 @@ tests/
 - [x] Fase 6a — UI multi-step, drag & drop riordino, modale anteprima
 - [x] Fase 6b — Regex sinonimi italiani PCT, prefisso obbligatorio, rilevamento bis/ter
 - [x] Fase 6c — Dark mode, anteprima PDF, startIndex, rinomina allegati, verifica natività
+- [x] Fase 6d — Anteprima PDF via mupdf (immagine adattiva, navigazione multi-pagina), pulsante Esci
 - [ ] Fase 7 — Packaging (electron-builder, DMG/EXE)
 - [ ] Fase 8 — UX (progress bar, notifiche native, apertura cartella output)
 

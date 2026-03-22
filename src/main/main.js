@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import mupdf from 'mupdf';
 import { processPCTDocument } from './pdf-processor.js';
 import { IPC_CHANNELS } from '../shared/types.js';
 
@@ -78,6 +79,31 @@ function registerIpcHandlers() {
     const buffer = await fs.promises.readFile(filePath);
     const sliced = buffer.slice(0, 500 * 1024);
     return { base64: sliced.toString('base64') };
+  });
+
+  /**
+   * Renderizza una pagina del PDF come JPEG e la restituisce come base64.
+   * Usato per l'anteprima nel renderer con navigazione multi-pagina.
+   *
+   * @param {Electron.IpcMainInvokeEvent} _event
+   * @param {{ filePath: string, pageIndex: number }} param
+   * @returns {Promise<{ base64: string, totalPages: number }>}
+   */
+  ipcMain.handle(IPC_CHANNELS.RENDER_PDF_PAGE, async (_event, { filePath, pageIndex = 0 }) => {
+    const buffer = await fs.promises.readFile(filePath);
+    const doc = mupdf.Document.openDocument(new Uint8Array(buffer), 'application/pdf');
+    const totalPages = doc.countPages();
+    const page = doc.loadPage(pageIndex);
+    const pixmap = page.toPixmap([1.5, 0, 0, 1.5, 0, 0], mupdf.ColorSpace.DeviceRGB, false, true);
+    const jpegBytes = pixmap.asJPEG(85);
+    return { base64: Buffer.from(jpegBytes).toString('base64'), totalPages };
+  });
+
+  /**
+   * Chiude l'applicazione.
+   */
+  ipcMain.handle(IPC_CHANNELS.QUIT_APP, () => {
+    app.quit();
   });
 
   ipcMain.handle(IPC_CHANNELS.PDF_PROCESS, async (_event, data) => {

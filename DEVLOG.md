@@ -391,3 +391,71 @@ con `workerSrc = ''` — richiede il path del worker come `file://` URL. Usato
 - pdfjs-dist ancora in package.json — può essere rimosso
 - Electron Builder non ancora configurato (Fase 6 roadmap)
 - `checkPdfNativity` non testata con PDF scansionato reale (funzione esportata, test possibile)
+
+---
+
+## Sessione 009 — Bugfix rinomina + anteprima PDF via mupdf (2026-03-22)
+
+### Cosa ho fatto
+
+**Fix 1 — Rinomina doppio numero:**
+- `buildRenamedName` nel renderer usava `originalName` direttamente senza rimuovere il prefisso numerico originale.
+- Aggiunta `stripLeadingNumber()` nel renderer (stessa logica di `pdf-processor.js`) e aggiornata `buildRenamedName` per usare `baseName`.
+- Risultato: `01_Comparsa_Risposta.pdf` + schema `doc_` + startIndex `2` → `doc_02_Comparsa_Risposta.pdf` ✓
+
+**Fix 2 — Anteprima PDF adattiva (sostituzione embed → img):**
+- `<embed type="application/pdf">` con data URI base64 usava il viewer nativo macOS (PDFKit): bande grigie laterali, dimensioni non controllabili via CSS.
+- Nuovo IPC handler `render-pdf-page`: legge il PDF, usa mupdf `page.toPixmap([1.5x], DeviceRGB, false, true)` → `asJPEG(85)` → base64.
+- Renderer usa `<img>` + `object-fit: contain` invece di `<embed>`. Container con `flex: 1; min-height: 200px`.
+- Aggiunti: `RENDER_PDF_PAGE` in `types.js`, handler in `main.js` (con `import mupdf`), `renderPdfPage(filePath)` in `preload.cjs`.
+
+### Decisioni prese
+- mupdf già installato → nessuna dipendenza nuova, nessun problema worker/CSP.
+- `READ_PDF_BASE64` / `readPdfAsBase64` lasciato in place (non usato, rimozione futura).
+- Scala 1.5x per risoluzione adeguata senza overhead eccessivo.
+
+### File modificati
+- `src/renderer/renderer.js` — `stripLeadingNumber`, `buildRenamedName`, `renderPdfPage`
+- `src/renderer/style.css` — `flex: 1` container, `.pdf-preview-img` con `object-fit: contain`
+- `src/renderer/index.html` — `<embed>` → `<img id="pdf-preview-img">`
+- `src/main/main.js` — `import mupdf`, handler `RENDER_PDF_PAGE`
+- `src/main/preload.cjs` — `renderPdfPage(filePath)`
+- `src/shared/types.js` — `RENDER_PDF_PAGE: 'render-pdf-page'`
+
+---
+
+## Sessione 010 — Navigazione pagine PDF + pulsante Esci (2026-03-22)
+
+### Cosa ho fatto
+
+**Feature 1 — Navigazione multi-pagina anteprima:**
+- IPC `render-pdf-page` esteso: accetta `{ filePath, pageIndex }`, restituisce `{ base64, totalPages }`.
+- `preload.cjs`: firma aggiornata a `renderPdfPage(filePath, pageIndex = 0)`.
+- UI: barra navigazione `‹ N / M ›` sotto l'immagine (`.pdf-nav`).
+- Renderer: stato `currentPage` / `totalPdfPages`, funzione `renderPdfPagePreview(pageIndex)`, listeners ← →.
+- Container PDF: `display: flex; flex-direction: column` — immagine `flex: 1`, nav barra `flex-shrink: 0`.
+
+**Feature 2 — Pulsante reset atto più visibile:**
+- `#btn-remove-main` ingrandito a 32×32px via CSS — già funzionante con `clearMainPdf()`.
+
+**Feature 3 — Pulsante "Esci dall'app":**
+- Nuovo canale IPC `app:quit` → `app.quit()`.
+- `#status-actions` con `<button id="btn-quit">` visibile dopo completamento (success o warning).
+- Nascosto da `setStatus()` ad ogni nuova elaborazione.
+
+### Decisioni prese
+- La navigazione rilegge il file a ogni cambio pagina (semplice, nessuna cache). Accettabile per file locali.
+- Pulsante Esci solo dopo completamento (non sempre visibile) per non distrarre durante il flusso.
+
+### File modificati
+- `src/shared/types.js` — `QUIT_APP: 'app:quit'`
+- `src/main/main.js` — handler `RENDER_PDF_PAGE` aggiornato, nuovo handler `QUIT_APP`
+- `src/main/preload.cjs` — `renderPdfPage(filePath, pageIndex)`, `quitApp()`
+- `src/renderer/index.html` — `.pdf-nav`, `#status-actions` con `#btn-quit`
+- `src/renderer/renderer.js` — stato pagine, `renderPdfPagePreview`, listeners, `btnQuit`, `statusActions`
+- `src/renderer/style.css` — `.pdf-nav`, `.btn-pdf-nav`, `.pdf-page-indicator`, `.status-actions`, `#btn-remove-main`
+
+### Problemi noti / TODO prossima sessione
+- `READ_PDF_BASE64` / `readPdfAsBase64` ancora presenti ma inutilizzati — rimuovere in futuro
+- pdfjs-dist ancora in package.json — può essere rimosso
+- Electron Builder non ancora configurato (Fase 6 roadmap)

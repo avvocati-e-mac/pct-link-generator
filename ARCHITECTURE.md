@@ -44,6 +44,8 @@ Tutti i canali sono definiti come costanti in `src/shared/types.js`. Mai hardcod
 | `pdf:process` | Renderer → Main | `{ mainPdfPath: string, attachments: Attachment[], outputFolder: string }` | `ProcessResult` |
 | `dialog:selectOutputFolder` | Renderer → Main | nessuno | `string \| null` |
 | `read-pdf-as-base64` | Renderer → Main | `filePath: string` | `{ base64: string }` |
+| `render-pdf-page` | Renderer → Main | `{ filePath: string, pageIndex: number }` | `{ base64: string, totalPages: number }` |
+| `app:quit` | Renderer → Main | nessuno | `void` |
 
 Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/response).
 
@@ -77,7 +79,7 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 | File | Responsabilità |
 |------|----------------|
 | `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC (`pdf:process`, `dialog:selectOutputFolder`, `read-pdf-as-base64`), gestisce lifecycle app. **Nessuna logica PDF.** |
-| `preload.cjs` | Bridge sicuro (CJS — Electron non supporta ESM nel preload). Espone `window.electronAPI` via `contextBridge`: `processPDF`, `selectOutputFolder`, `getPathForFile`, `readPdfAsBase64`. |
+| `preload.cjs` | Bridge sicuro (CJS — Electron non supporta ESM nel preload). Espone `window.electronAPI` via `contextBridge`: `processPDF`, `selectOutputFolder`, `getPathForFile`, `readPdfAsBase64`, `renderPdfPage`, `quitApp`. |
 | `pdf-processor.js` | Tutta la logica PDF: `checkPdfNativity` (verifica testo estraibile), `findTextCoordinates` (mupdf), `addUnderlineLink` (pdf-lib), `buildRenamedName` / `hasLeadingNumber` (rinomina allegati), `processPCTDocument` (orchestrazione). **Nessun codice Electron.** |
 
 ---
@@ -86,8 +88,8 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 
 | File | Responsabilità |
 |------|----------------|
-| `index.html` | Shell HTML. Step 1 (drop PDF atto + anteprima embed), Step 2 (drop allegati, lista riordinabile, input startIndex, select rinomina), toggle dark mode, modale anteprima, area stato. |
-| `renderer.js` | Logica UI: navigazione step 1/2, dark mode (`initTheme` + localStorage), anteprima PDF (`readPdfAsBase64`), `getStartIndex`, `hasLeadingNumber`, `buildRenamedName`, badge ⚠️, drag & drop riordino, multi-selezione, modale preview, chiamate `window.electronAPI`. |
+| `index.html` | Shell HTML. Step 1 (drop PDF atto + anteprima immagine con navigazione pagine ‹/›), Step 2 (drop allegati, lista riordinabile, input startIndex, select rinomina), toggle dark mode, modale anteprima, area stato con pulsante "Esci". |
+| `renderer.js` | Logica UI: navigazione step 1/2, dark mode (`initTheme` + localStorage), anteprima PDF multi-pagina (`renderPdfPagePreview` + stato `currentPage`/`totalPdfPages`), `getStartIndex`, `hasLeadingNumber`, `buildRenamedName`, `stripLeadingNumber`, badge ⚠️, drag & drop riordino, multi-selezione, modale preview, chiamate `window.electronAPI`. |
 | `style.css` | Stili vanilla: variabili CSS con tema light/dark (`[data-theme="dark"]` + `prefers-color-scheme`), layout grid allegati, step views, drag highlighting, lista scrollabile. |
 
 ---
@@ -103,11 +105,14 @@ UTENTE
   ├─ Step 1: Drag & drop PDF atto principale
   │     → renderer.js cattura evento drop
   │     → webUtils.getPathForFile(file) → percorso assoluto
-  │     → setMainPdf(): aggiorna UI, abilita "Avanti →"
-  │     → window.electronAPI.readPdfAsBase64(path)
-  │           → IPC: read-pdf-as-base64
-  │           → main.js: fs.readFile → buffer.slice(0, 500KB) → base64
-  │           → embed#pdf-preview-embed.src = "data:application/pdf;base64,..."
+  │     → setMainPdf(): aggiorna UI, abilita "Avanti →", resetta currentPage=0
+  │     → renderPdfPagePreview(0)
+  │           → window.electronAPI.renderPdfPage(path, pageIndex)
+  │           → IPC: render-pdf-page
+  │           → main.js: mupdf → loadPage(pageIndex) → toPixmap(1.5x) → asJPEG(85)
+  │           → restituisce { base64, totalPages }
+  │           → img#pdf-preview-img.src = "data:image/jpeg;base64,..."
+  │           → aggiorna indicatore "N / M", abilita/disabilita ‹ ›
   │
   ├─ Step 2: Drag & drop allegati (ripetuto)
   │     → renderer.js cattura evento drop
@@ -179,6 +184,7 @@ UTENTE
                     → UI: "Completato ✓" o avviso parziale
                     → Se warning PDF_LOW_TEXT_DENSITY: avviso OCR non bloccante
                     → Se unsupportedPatterns: avviso giallo con lista pattern non linkati
+                    → Pulsante "Esci dall'app" visibile → IPC: app:quit → app.quit()
 ```
 
 ---

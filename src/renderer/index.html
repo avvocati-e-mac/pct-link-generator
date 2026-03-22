@@ -41,7 +41,12 @@
         </div>
         <span class="file-path" id="main-pdf-path"></span>
         <div class="pdf-preview-container hidden" id="pdf-preview-container">
-          <embed id="pdf-preview-embed" type="application/pdf" class="pdf-preview-embed" />
+          <img id="pdf-preview-img" class="pdf-preview-img" alt="Anteprima atto principale" />
+          <div class="pdf-nav" id="pdf-nav">
+            <button class="btn-pdf-nav" id="btn-pdf-prev" aria-label="Pagina precedente">‹</button>
+            <span class="pdf-page-indicator" id="pdf-page-indicator">1 / 1</span>
+            <button class="btn-pdf-nav" id="btn-pdf-next" aria-label="Pagina successiva">›</button>
+          </div>
         </div>
       </div>
 
@@ -102,6 +107,9 @@
     <div class="status-area hidden" id="status-area">
       <div class="status-message" id="status-message"></div>
       <ul class="not-found-list hidden" id="not-found-list"></ul>
+      <div class="status-actions hidden" id="status-actions">
+        <button class="btn-secondary" id="btn-quit">Esci dall'app</button>
+      </div>
     </div>
 
   </main>

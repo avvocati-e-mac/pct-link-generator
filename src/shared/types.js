@@ -14,6 +14,8 @@ export const IPC_CHANNELS = {
   PDF_PROCESS:          'pdf:process',
   DIALOG_SELECT_FOLDER: 'dialog:selectOutputFolder',
   READ_PDF_BASE64:      'read-pdf-as-base64',
+  RENDER_PDF_PAGE:      'render-pdf-page',
+  QUIT_APP:             'app:quit',
 };
 
 /**
