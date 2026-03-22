@@ -8,7 +8,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import { PDFDocument, rgb, PDFName } from 'pdf-lib';
+import { PDFDocument, rgb, PDFName, PDFString } from 'pdf-lib';
 import mupdf from 'mupdf';
 
 // ===== Funzione di matching flessibile =====
@@ -228,8 +228,8 @@ export async function addUnderlineLink(pdfPath, outputPath, annotations) {
         S: 'Launch',
         F: pdfDoc.context.obj({
           Type: 'Filespec',
-          F:  ann.targetFile,   // path relativo, ASCII
-          UF: ann.targetFile,   // path relativo, Unicode (PDF 1.7+)
+          F:  PDFString.of(ann.targetFile),   // PDFString per path relativo ASCII
+          UF: PDFString.of(ann.targetFile),   // PDFString per path relativo Unicode
         }),
         NewWindow: true,
       },
