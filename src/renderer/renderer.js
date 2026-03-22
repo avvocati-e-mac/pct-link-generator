@@ -578,6 +578,14 @@ async function runGeneration() {
       );
     }
 
+    // Avviso bassa densità testo (possibile OCR superficiale) — non bloccante
+    if (result.warning === 'PDF_LOW_TEXT_DENSITY') {
+      const warnOcr = document.createElement('p');
+      warnOcr.className = 'status-warning';
+      warnOcr.textContent = '⚠️ Attenzione: il PDF contiene poco testo selezionabile. Potrebbe trattarsi di un PDF scansionato con OCR superficiale — verifica che i link siano stati inseriti correttamente.';
+      statusArea.appendChild(warnOcr);
+    }
+
     // Avviso per pattern bis/ter/quater non supportati
     if (result.unsupportedPatterns && result.unsupportedPatterns.length > 0) {
       const warning = document.createElement('p');

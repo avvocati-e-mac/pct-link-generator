@@ -251,7 +251,7 @@ describe('findTextCoordinates', () => {
 
 describe('processPCTDocument — caso notFound', () => {
   it('restituisce notFound con l\'etichetta e success=true se non trovata', async () => {
-    const { pdfPath: mainPdfPath } = await createTestPdf('Atto senza etichette speciali.');
+    const { pdfPath: mainPdfPath } = await createTestPdf('Atto senza etichette speciali. Questo testo è sufficientemente lungo da superare la soglia di natività del documento PCT.');
     tmpFiles.push(mainPdfPath);
 
     const attPath = await createDummyFile('allegato_test.pdf');
@@ -277,7 +277,7 @@ describe('processPCTDocument — caso notFound', () => {
 
 describe('processPCTDocument — copia allegati', () => {
   it('copia tutti gli allegati nella outputFolder', async () => {
-    const { pdfPath: mainPdfPath } = await createTestPdf('Atto con doc. 1 e doc. 2 citati.');
+    const { pdfPath: mainPdfPath } = await createTestPdf('Atto principale che cita il doc. 1 allegato e il doc. 2 allegato. Il testo supera la soglia minima di cento caratteri richiesta per i PDF nativi.');
     tmpFiles.push(mainPdfPath);
 
     const att1Path = await createDummyFile('att_test_1.pdf');

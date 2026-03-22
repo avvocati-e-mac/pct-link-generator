@@ -43,8 +43,9 @@ export const IPC_CHANNELS = {
 
 /**
  * @typedef {Object} ProcessResult
- * @property {boolean}  success                - Sempre true (anche con notFound)
- * @property {number}   processedAnnotations   - Numero totale annotazioni aggiunte
- * @property {string[]} notFound               - Etichette non trovate nel PDF
- * @property {string[]} unsupportedPatterns    - Pattern bis/ter/quater trovati ma non linkati
+ * @property {boolean}       success                - Sempre true (anche con notFound)
+ * @property {number}        processedAnnotations   - Numero totale annotazioni aggiunte
+ * @property {string[]}      notFound               - Etichette non trovate nel PDF
+ * @property {string[]}      unsupportedPatterns    - Pattern bis/ter/quater trovati ma non linkati
+ * @property {string|null}   [warning]              - 'PDF_LOW_TEXT_DENSITY' se OCR sospetto, null altrimenti
  */

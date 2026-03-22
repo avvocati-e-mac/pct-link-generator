@@ -372,6 +372,39 @@ function findUnsupportedBisPatterns(doc) {
 }
 
 /**
+ * Verifica se un PDF contiene testo selezionabile sufficiente (PDF nativo).
+ * Un PDF scansionato puro avrà 0 o pochissimi caratteri estratti.
+ *
+ * Soglie:
+ * - totalChars < 100 → PDF non nativo (scansione pura) — errore bloccante
+ * - totalChars / numPages < 50 → sospetto OCR superficiale — warning non bloccante
+ *
+ * @param {string} pdfPath - Percorso assoluto del PDF
+ * @returns {Promise<{ isNative: boolean, totalChars: number, numPages: number, warning: string|null }>}
+ */
+export async function checkPdfNativity(pdfPath) {
+  const buffer = await fs.promises.readFile(pdfPath);
+  const doc = mupdf.Document.openDocument(new Uint8Array(buffer), 'application/pdf');
+  const numPages = doc.countPages();
+  let totalChars = 0;
+
+  for (let i = 0; i < numPages; i++) {
+    const page = doc.loadPage(i);
+    const stext = page.toStructuredText('preserve-whitespace');
+    totalChars += stext.asText().length;
+    page.destroy();
+  }
+
+  const isNative = totalChars >= 100;
+  let warning = null;
+  if (isNative && numPages > 0 && totalChars / numPages < 50) {
+    warning = 'PDF_LOW_TEXT_DENSITY';
+  }
+
+  return { isNative, totalChars, numPages, warning };
+}
+
+/**
  * Processo completo PCT:
  * 1. Copia allegati nella outputFolder
  * 2. Cerca le etichette nel PDF principale
@@ -393,6 +426,29 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
       throw new Error(`Il PDF è protetto da password: ${path.basename(mainPdfPath)}`);
     }
     throw new Error(`PDF non leggibile o corrotto: ${path.basename(mainPdfPath)} — ${err.message}`);
+  }
+
+  // Verifica natività del PDF (nativo testuale vs scansione)
+  let nativityWarning = null;
+  {
+    const numPages = mupdfDoc.countPages();
+    let totalChars = 0;
+    for (let i = 0; i < numPages; i++) {
+      const pg = mupdfDoc.loadPage(i);
+      totalChars += pg.toStructuredText('preserve-whitespace').asText().length;
+      pg.destroy();
+    }
+    if (totalChars < 100) {
+      throw new Error(
+        `Il PDF sembra una scansione (${totalChars} caratteri estratti): i link non possono essere aggiunti. ` +
+        `Usa un PDF nativo testuale.`
+      );
+    }
+    if (numPages > 0 && totalChars / numPages < 50) {
+      nativityWarning = 'PDF_LOW_TEXT_DENSITY';
+      console.log(`[PDF] Attenzione: bassa densità di testo (${Math.round(totalChars / numPages)} char/pagina) — possibile OCR superficiale`);
+    }
+    console.log(`[PDF] Natività OK: ${totalChars} caratteri, ${numPages} pagine`);
   }
 
   // Rileva pattern bis/ter/quater non supportati
@@ -447,6 +503,7 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
     processedAnnotations: allAnnotations.length,
     notFound,
     unsupportedPatterns,
+    warning: nativityWarning,
   };
 }
 
