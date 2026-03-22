@@ -37,6 +37,8 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT — crea
 
 **Uso tipico:** avvocati e professionisti che depositano atti telematici del Processo Civile Telematico (PCT).
 
+> Per approfondire la tecnica dei collegamenti ipertestuali tra atto e allegati, leggi l'articolo: [**PCT: come fare i collegamenti iper-testuali tra l'atto principale e gli allegati depositati**](https://avvocati-e-mac.it/blog/2015/9/18/pct-come-fare-i-collegamenti-iper-testuali-tra-latto-principale-e-gli-allegati-depositati?rq=collegamenti%20allegati)
+
 ---
 
 ## Download
@@ -61,7 +63,7 @@ L'app non è notarizzata da Apple. Al primo avvio macOS la mette in quarantena e
 **Prima di avviare l'app**, esegui questo comando nel Terminale:
 
 ```bash
-sudo xattr -cr /Applications/PCT\ Link\ Generator.app
+sudo xattr -cr /Applications/pct-link-generator.app
 ```
 
 > Sostituisci il percorso se hai installato l'app in una cartella diversa da `/Applications`.

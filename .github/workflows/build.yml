@@ -152,10 +152,12 @@ jobs:
             L'app non è notarizzata. Prima di avviarla, esegui nel Terminale:
 
             ```bash
-            sudo xattr -cr /Applications/PCT\ Link\ Generator.app
+            sudo xattr -cr /Applications/pct-link-generator.app
             ```
 
             Questo comando rimuove l'attributo di quarantena imposto da macOS sui file scaricati da internet.
+
+            > Sostituisci il percorso se hai installato l'app in una cartella diversa da `/Applications`.
           draft: false
           prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
         env:
