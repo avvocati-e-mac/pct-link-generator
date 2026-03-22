@@ -153,10 +153,10 @@ body {
 header {
   background: var(--color-header-bg);
   color: var(--color-header-text);
-  padding: 18px 32px;
-  display: flex;
+  padding: 14px 32px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  gap: 16px;
 }
 
 header h1 {
@@ -172,7 +172,7 @@ header .subtitle {
 }
 
 .header-text {
-  flex: 1;
+  justify-self: start;
 }
 
 /* ===== Toggle dark mode ===== */
@@ -185,7 +185,7 @@ header .subtitle {
   font-size: 16px;
   padding: 4px 8px;
   transition: background 0.15s;
-  flex-shrink: 0;
+  justify-self: end;
 }
 
 .btn-theme-toggle:hover {
@@ -274,6 +274,71 @@ main {
   line-height: 1.5;
 }
 
+.drop-text-main {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  line-height: 1.5;
+}
+
+.drop-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.fmt-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.3px;
+}
+
+.fmt-pdf   { background: #fee2e2; color: #991b1b; }
+.fmt-rtf   { background: #fef3c7; color: #92400e; }
+.fmt-img   { background: #d1fae5; color: #065f46; }
+.fmt-email { background: #dbeafe; color: #1e40af; }
+.fmt-xml   { background: #f3e8ff; color: #6b21a8; }
+.fmt-media { background: #e0f2fe; color: #075985; }
+
+[data-theme="dark"] .fmt-pdf   { background: #450a0a; color: #fca5a5; }
+[data-theme="dark"] .fmt-rtf   { background: #451a03; color: #fcd34d; }
+[data-theme="dark"] .fmt-img   { background: #052e16; color: #6ee7b7; }
+[data-theme="dark"] .fmt-email { background: #1e3a5f; color: #93c5fd; }
+[data-theme="dark"] .fmt-xml   { background: #2e1065; color: #d8b4fe; }
+[data-theme="dark"] .fmt-media { background: #0c4a6e; color: #7dd3fc; }
+
+/* ===== Step 1 — layout caricato ===== */
+.step1-loaded-layout {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.step1-left {
+  flex: 1 1 180px;
+  min-width: 0;
+}
+
+.step1-right {
+  flex: 2 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.step1-remove-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
 /* ===== Info file atto principale ===== */
 .file-info {
   background: var(--color-file-info-bg);
@@ -298,9 +363,9 @@ main {
 .file-name {
   font-weight: 600;
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  word-break: break-all;
+  white-space: normal;
 }
 
 .file-path {
@@ -352,16 +417,29 @@ main {
   opacity: 0.8;
 }
 
+/* ===== Drag hint bar ===== */
+.drag-hint-bar {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-faint);
+  padding: 6px 2px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 4px;
+}
+
+.drag-hint-icon {
+  font-size: 15px;
+  color: var(--color-drag-handle);
+}
+
 /* ===== Lista allegati ===== */
 .attachments-list {
   list-style: none;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 8px;
+  columns: 2 300px;
+  column-gap: 8px;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
-  align-content: start;
 }
 
 .attachment-item {
@@ -374,6 +452,8 @@ main {
   align-items: center;
   gap: 8px;
   transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.12s;
+  break-inside: avoid;
+  margin-bottom: 6px;
 }
 
 .attachment-item .att-number {
@@ -425,6 +505,15 @@ main {
   width: 32px;
   height: 32px;
   font-size: 15px;
+  background: #dc2626;
+  border-color: #dc2626;
+  color: #fff;
+}
+
+#btn-remove-main:hover {
+  background: #b91c1c;
+  border-color: #b91c1c;
+  color: #fff;
 }
 
 /* ===== Pulsante azione principale ===== */
@@ -455,28 +544,27 @@ main {
   cursor: not-allowed;
 }
 
-/* ===== Step indicator ===== */
+/* ===== Step indicator (nel header) ===== */
 .step-indicator {
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 16px;
 }
 
 .step-indicator-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
 }
 
 .si-circle {
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--color-border);
-  color: var(--color-text-muted);
-  font-size: 14px;
+  background: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.5);
+  font-size: 13px;
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -485,22 +573,22 @@ main {
 }
 
 .si-label {
-  font-size: 11px;
-  color: var(--color-text-muted);
+  font-size: 10px;
+  color: rgba(255,255,255,0.45);
   font-weight: 500;
   white-space: nowrap;
 }
 
 .si-connector {
   height: 2px;
-  background: var(--color-border);
-  width: 60px;
-  margin: 0 8px 20px;
+  background: rgba(255,255,255,0.15);
+  width: 48px;
+  margin: 0 6px 18px;
   transition: background 0.2s;
 }
 
 .step-indicator-item.active .si-circle { background: var(--color-accent); color: #fff; }
-.step-indicator-item.active .si-label  { color: var(--color-accent); font-weight: 600; }
+.step-indicator-item.active .si-label  { color: #fff; font-weight: 600; }
 .step-indicator-item.completed .si-circle { background: var(--color-status-success); color: #fff; }
 .step-indicator-item.completed .si-label  { color: var(--color-status-success); }
 .si-connector.completed { background: var(--color-accent); }
@@ -524,12 +612,12 @@ main {
   line-height: 1.5;
 }
 
-.file-hint {
+.file-hint-inline {
   font-size: 11px;
   color: var(--color-text-muted);
   font-style: italic;
-  line-height: 1.4;
-  margin-top: 2px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 /* ===== Area stato ===== */
@@ -603,7 +691,8 @@ main {
 
 /* ===== Steps ===== */
 #view-step1,
-#view-step2 {
+#view-step2,
+#view-step3 {
   background: var(--color-surface);
   border-radius: 12px;
   padding: 28px 32px;
@@ -618,6 +707,32 @@ main {
   flex: 1;
   overflow: hidden;
   min-height: 0;
+}
+
+#view-step3 {
+  padding: 0;
+}
+
+/* Step 3 — sfondo verde su successo */
+#view-step3.has-success {
+  background: transparent;
+}
+
+#view-step3.has-success .status-area {
+  background: #f0fdf4;
+  border: 2px solid #86efac;
+}
+
+[data-theme="dark"] #view-step3.has-success .status-area {
+  background: #052e16;
+  border-color: #166534;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) #view-step3.has-success .status-area {
+    background: #052e16;
+    border-color: #166534;
+  }
 }
 
 .step-title {
@@ -638,8 +753,16 @@ main {
   justify-content: space-between;
 }
 
+.step3-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
 #view-step1 .action-row,
-#view-step2 .action-row {
+#view-step2 .action-row,
+#view-step3 .action-row {
   flex-shrink: 0;
   border-top: 1px solid var(--color-border);
   padding-top: 12px;
@@ -793,23 +916,17 @@ main {
 
 /* ===== Anteprima PDF ===== */
 .pdf-preview-container {
-  margin-top: 12px;
   border: 1px solid var(--color-border);
   border-radius: 6px;
   overflow: hidden;
-  flex: 1;
-  min-height: 200px;
-  max-height: 280px;
   background: #fff;
   display: flex;
   flex-direction: column;
 }
 
 .pdf-preview-img {
-  flex: 1;
   width: 100%;
-  min-height: 0;
-  object-fit: contain;
+  height: auto;
   display: block;
 }
 

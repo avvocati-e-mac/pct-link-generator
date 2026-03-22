@@ -57,9 +57,12 @@ const ACCEPTED_EXTENSIONS = [
 
 const viewStep1           = document.getElementById('view-step1');
 const viewStep2           = document.getElementById('view-step2');
+const viewStep3           = document.getElementById('view-step3');
+const dragHintBar         = document.getElementById('drag-hint-bar');
 
 const dropZoneMain        = document.getElementById('drop-zone-main');
 const inputMainPdf        = document.getElementById('input-main-pdf');
+const step1LoadedLayout   = document.getElementById('step1-loaded-layout');
 const mainPdfInfo         = document.getElementById('main-pdf-info');
 const mainPdfNameEl       = document.getElementById('main-pdf-name');
 const mainPdfPathEl       = document.getElementById('main-pdf-path');
@@ -87,9 +90,9 @@ const statusArea          = document.getElementById('status-area');
 const progressBar         = document.getElementById('progress-bar');
 const statusMessage       = document.getElementById('status-message');
 const notFoundList        = document.getElementById('not-found-list');
-const statusActions       = document.getElementById('status-actions');
 const btnOpenOutput       = document.getElementById('btn-open-output');
 const btnQuit             = document.getElementById('btn-quit');
+const btnBackStep3        = document.getElementById('btn-back-step3');
 
 const modalPreview        = document.getElementById('modal-preview');
 const previewMainPdf      = document.getElementById('preview-main-pdf');
@@ -226,21 +229,33 @@ function buildRenamedName(originalName, scheme, index, total) {
 // ===== Navigazione Step 1 ↔ Step 2 =====
 
 /**
- * Mostra lo step 1 (atto principale), nasconde lo step 2.
+ * Mostra lo step 1 (atto principale), nasconde gli altri step.
  */
 function showStep1() {
   viewStep1.classList.remove('hidden');
   viewStep2.classList.add('hidden');
+  viewStep3.classList.add('hidden');
   updateStepIndicator(1);
 }
 
 /**
- * Mostra lo step 2 (allegati), nasconde lo step 1.
+ * Mostra lo step 2 (allegati), nasconde gli altri step.
  */
 function showStep2() {
   viewStep1.classList.add('hidden');
   viewStep2.classList.remove('hidden');
+  viewStep3.classList.add('hidden');
   updateStepIndicator(2);
+}
+
+/**
+ * Mostra lo step 3 (risultato), nasconde gli altri step.
+ */
+function showStep3() {
+  viewStep1.classList.add('hidden');
+  viewStep2.classList.add('hidden');
+  viewStep3.classList.remove('hidden');
+  updateStepIndicator(3);
 }
 
 btnNext.addEventListener('click', () => {
@@ -249,6 +264,10 @@ btnNext.addEventListener('click', () => {
 
 btnBack.addEventListener('click', () => {
   showStep1();
+});
+
+btnBackStep3.addEventListener('click', () => {
+  showStep2();
 });
 
 // ===== Drag & drop: atto principale =====
@@ -285,7 +304,7 @@ function setMainPdf(file) {
   mainPdfPath = window.electronAPI.getPathForFile(file);
   mainPdfNameEl.textContent = file.name;
   mainPdfPathEl.textContent = mainPdfPath;
-  mainPdfInfo.classList.remove('hidden');
+  step1LoadedLayout.classList.remove('hidden');
   dropZoneMain.classList.add('hidden');
   updateNextButton();
 
@@ -300,9 +319,8 @@ function setMainPdf(file) {
  */
 function clearMainPdf() {
   mainPdfPath = null;
-  mainPdfInfo.classList.add('hidden');
+  step1LoadedLayout.classList.add('hidden');
   dropZoneMain.classList.remove('hidden');
-  pdfPreviewContainer.classList.add('hidden');
   pdfPreviewImg.src = '';
   currentPage = 0;
   totalPdfPages = 1;
@@ -509,6 +527,13 @@ function attachDragHandlers(li, handle, id) {
  * Il numero di posizione (1-based) è la label che verrà passata al processore.
  */
 function renderAttachmentsList() {
+  // Mostra il drag hint bar solo quando ci sono almeno 2 allegati
+  if (attachments.length >= 2) {
+    dragHintBar.classList.remove('hidden');
+  } else {
+    dragHintBar.classList.add('hidden');
+  }
+
   attachmentsList.innerHTML = '';
   attachments.forEach((att, idx) => {
     const li = document.createElement('li');
@@ -603,7 +628,8 @@ async function runGeneration() {
 
   lastOutputFolder = outputFolder;
 
-  // 2. Avvia elaborazione
+  // 2. Avvia elaborazione — mostra step 3 con progress
+  showStep3();
   setStatus('info', 'Elaborazione in corso…');
   progressBar.classList.remove('hidden');
   btnGenerate.disabled = true;
@@ -641,8 +667,6 @@ async function runGeneration() {
         `File salvati in: ${outputFolder}`
       );
     }
-    statusActions.classList.remove('hidden');
-
     // Avviso bassa densità testo (possibile OCR superficiale) — non bloccante
     if (result.warning === 'PDF_LOW_TEXT_DENSITY') {
       const warnOcr = document.createElement('p');
@@ -680,9 +704,14 @@ function setStatus(type, text) {
   statusMessage.textContent = text;
   notFoundList.classList.add('hidden');
   notFoundList.innerHTML = '';
-  statusActions.classList.add('hidden');
   // Rimuovi eventuali avvisi bis/ter dal ciclo precedente
   statusArea.querySelectorAll('.status-warning').forEach(el => el.remove());
+  // Sfondo verde su successo, rimosso su info/warning/error
+  if (type === 'success') {
+    viewStep3.classList.add('has-success');
+  } else {
+    viewStep3.classList.remove('has-success');
+  }
   if (type === 'success' || type === 'warning') updateStepIndicator(3);
 }
 
