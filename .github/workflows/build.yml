@@ -39,11 +39,12 @@ jobs:
           path: dist/*.dmg
 
   # ─────────────────────────────────────────
-  # macOS Intel (x64) — macos-13 = macOS 13 su runner Intel
+  # macOS Intel (x64) — cross-compilato da macos-latest (ARM)
+  # macos-13 non è più disponibile sui runner GitHub
   # ─────────────────────────────────────────
   build-mac-x64:
     name: Build macOS Intel (x64)
-    runs-on: macos-13
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
