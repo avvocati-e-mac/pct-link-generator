@@ -1,0 +1,20 @@
+{
+  "name": "pct-link-generator",
+  "version": "0.1.0",
+  "description": "App desktop per aggiungere annotazioni link ai PDF degli atti PCT",
+  "type": "module",
+  "main": "src/main/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "vitest run",
+    "build": "echo 'Build placeholder — da configurare con electron-builder'"
+  },
+  "dependencies": {
+    "electron": "^33.0.0",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.7.76"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}
