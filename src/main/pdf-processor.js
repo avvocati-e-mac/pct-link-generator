@@ -25,22 +25,45 @@ export const LABEL_SYNONYM_GROUPS = [
 ];
 
 /**
+ * Pattern stringa per il prefisso opzionale (doc./allegato/ecc. + n. opzionale).
+ * Usato nel Caso A di buildSearchRegex (label solo numero).
+ * Esportata per i test.
+ * @type {string}
+ */
+export const SYNONYMS_PREFIX_PATTERN =
+  '(?:(?:doc\\.?|documento|all\\.?|allegato|att\\.?|attaccato|ex)\\s+(?:n\\.?\\s*)?)?';
+
+/**
  * Crea una RegExp flessibile per trovare un'etichetta nel testo del PDF.
- * Normalizza: "doc. 1" trova "Doc.1", "doc 1", "DOC. 1", "Doc. 1", ecc.
- * Espande il prefisso con sinonimi PCT: "doc. 1" trova anche "documento 1",
- * "Allegato 1", "all. 1", ecc.
  *
- * @param {string} label - Es. "doc. 1", "allegato 2"
+ * **Caso A — label è solo un numero (es. "1", "11", "100"):**
+ * Costruisce una regex con prefisso opzionale completo:
+ *   (?:(?:doc.?|documento|all.?|allegato|att.?|attaccato|ex)\s+(?:n.?\s*)?)?NUMERO(?![a-zA-Z0-9])
+ * Il prefisso è opzionale → fa match sia su "1" standalone sia su "allegato 1",
+ * "doc. 1", "allegato n. 1", "Documento n. 1", "all. 1" ecc.
+ * Lookahead negativo → "1" non fa match su "11", "1a", "1bis" (senza spazio).
+ *
+ * **Caso B — label contiene un prefisso (es. "doc. 1", "allegato A"):**
+ * Comportamento esistente con espansione sinonimi.
+ *
+ * @param {string} label - Es. "1", "11", "doc. 1", "allegato 2"
  * @returns {RegExp}
  */
 export function buildSearchRegex(label) {
-  // Strategia:
-  // 1. Estrai token alfanumerici dalla label
-  // 2. Se il primo token è in un gruppo sinonimi, sostituiscilo con
-  //    un'alternanza regex che copre tutti i sinonimi del gruppo
-  //    (abbreviazioni: punto opzionale es. doc\.?)
-  // 3. Unisci i token con [\s.]* e aggiungi lookahead negativo finale
   const normalized = label.trim();
+
+  // Caso A: label è solo un numero (posizione 1-based)
+  if (/^\d+$/.test(normalized)) {
+    const numEscaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // (?<!\d) = lookbehind negativo: il numero non può essere preceduto da un'altra cifra.
+    // Questo evita che label "1" faccia match su "11" o "111":
+    //   "doc. 11" → la "1" è preceduta da "1" → no match ✓
+    //   "doc. 1"  → la "1" è preceduta da " " → match ✓
+    // (?![a-zA-Z0-9]) = lookahead negativo: nessuna lettera o cifra dopo il numero.
+    return new RegExp(SYNONYMS_PREFIX_PATTERN + '(?<!\\d)' + numEscaped + '(?![a-zA-Z0-9])', 'i');
+  }
+
+  // Caso B: label contiene un prefisso (comportamento esistente con sinonimi)
   const tokens = normalized.match(/[a-zA-ZàèéìòùÀÈÉÌÒÙ]+|\d+/g) || [];
   if (tokens.length === 0) {
     return new RegExp('(?!)', 'i'); // regex che non fa mai match

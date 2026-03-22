@@ -16,6 +16,7 @@ import {
   addUnderlineLink,
   processPCTDocument,
   LABEL_SYNONYM_GROUPS,
+  SYNONYMS_PREFIX_PATTERN,
 } from '../src/main/pdf-processor.js';
 
 // ===== Utilità per test =====
@@ -154,6 +155,57 @@ describe('buildSearchRegex — sinonimi italiani PCT', () => {
     const firstGroup = LABEL_SYNONYM_GROUPS[0];
     expect(firstGroup).toContain('doc');
     expect(firstGroup).toContain('allegato');
+  });
+});
+
+// ===== Test 2c: buildSearchRegex — label solo numero (posizione) =====
+
+describe('buildSearchRegex — label solo numero (posizione)', () => {
+  // Deve fare match
+  const matchCases = [
+    { label: '1',   input: 'doc. 1',             desc: 'doc. 1' },
+    { label: '1',   input: 'allegato 1',          desc: 'allegato 1' },
+    { label: '1',   input: 'allegato n. 1',       desc: 'allegato n. 1' },
+    { label: '1',   input: 'Documento n. 1',      desc: 'Documento n. 1' },
+    { label: '1',   input: 'all. 1',              desc: 'all. 1' },
+    { label: '1',   input: 'att. 1',              desc: 'att. 1' },
+    { label: '1',   input: '1',                   desc: '1 standalone' },
+    { label: '1',   input: 'allegato 1 bis',      desc: 'allegato 1 bis (spazio prima di bis)' },
+    { label: '1',   input: 'doc. 1 ter',          desc: 'doc. 1 ter (spazio prima di ter)' },
+    { label: '11',  input: 'allegato n. 11',      desc: 'allegato n. 11' },
+    { label: '11',  input: 'doc. 11',             desc: 'doc. 11' },
+    { label: '11',  input: 'Documento n. 11',     desc: 'Documento n. 11' },
+    { label: '100', input: 'allegato 100',        desc: 'allegato 100' },
+    { label: '100', input: 'doc. 100',            desc: 'doc. 100' },
+  ];
+
+  for (const { label, input, desc } of matchCases) {
+    it(`label "${label}" trova "${desc}"`, () => {
+      expect(buildSearchRegex(label).test(input)).toBe(true);
+    });
+  }
+
+  // NON deve fare match
+  const noMatchCases = [
+    { label: '1',   input: 'doc. 11',            desc: 'doc. 11 (falso positivo)' },
+    { label: '1',   input: 'allegato 12',         desc: 'allegato 12 (falso positivo)' },
+    { label: '1',   input: '1a',                  desc: '1a (lettera attaccata)' },
+    { label: '1',   input: 'doc. 1bis',           desc: 'doc. 1bis (senza spazio)' },
+    { label: '1',   input: 'allegato 1ter',       desc: 'allegato 1ter (senza spazio)' },
+    { label: '11',  input: 'allegato n. 111',     desc: 'allegato n. 111 (falso positivo)' },
+    { label: '11',  input: 'doc. 112',            desc: 'doc. 112 (falso positivo)' },
+    { label: '100', input: 'allegato 1000',       desc: 'allegato 1000 (falso positivo)' },
+  ];
+
+  for (const { label, input, desc } of noMatchCases) {
+    it(`label "${label}" NON trova "${desc}"`, () => {
+      expect(buildSearchRegex(label).test(input)).toBe(false);
+    });
+  }
+
+  it('SYNONYMS_PREFIX_PATTERN è una stringa esportata non vuota', () => {
+    expect(typeof SYNONYMS_PREFIX_PATTERN).toBe('string');
+    expect(SYNONYMS_PREFIX_PATTERN.length).toBeGreaterThan(0);
   });
 });
 
