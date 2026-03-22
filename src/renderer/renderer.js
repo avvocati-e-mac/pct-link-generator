@@ -78,6 +78,8 @@ const previewTbody        = document.getElementById('preview-tbody');
 const btnModalCancel      = document.getElementById('btn-modal-cancel');
 const btnModalConfirm     = document.getElementById('btn-modal-confirm');
 const btnThemeToggle      = document.getElementById('btn-theme-toggle');
+const pdfPreviewContainer = document.getElementById('pdf-preview-container');
+const pdfPreviewEmbed     = document.getElementById('pdf-preview-embed');
 
 // ===== Dark mode =====
 
@@ -225,6 +227,15 @@ function setMainPdf(file) {
   mainPdfInfo.classList.remove('hidden');
   dropZoneMain.classList.add('hidden');
   updateNextButton();
+
+  // Anteprima PDF — carica i primi 500KB come data URI (nessun blob:)
+  window.electronAPI.readPdfAsBase64(mainPdfPath).then((result) => {
+    pdfPreviewEmbed.src = 'data:application/pdf;base64,' + result.base64;
+    pdfPreviewContainer.classList.remove('hidden');
+  }).catch(() => {
+    // Errore silenzioso — l'anteprima non è critica
+    pdfPreviewContainer.classList.add('hidden');
+  });
 }
 
 /**
@@ -234,6 +245,8 @@ function clearMainPdf() {
   mainPdfPath = null;
   mainPdfInfo.classList.add('hidden');
   dropZoneMain.classList.remove('hidden');
+  pdfPreviewContainer.classList.add('hidden');
+  pdfPreviewEmbed.src = '';
   updateNextButton();
 }
 

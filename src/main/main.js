@@ -1,6 +1,7 @@
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 import { processPCTDocument } from './pdf-processor.js';
 import { IPC_CHANNELS } from '../shared/types.js';
 
@@ -65,6 +66,20 @@ function registerIpcHandlers() {
    * @param {{ mainPdfPath: string, attachments: Array<{path: string, name: string, label: string}>, outputFolder: string }} data
    * @returns {Promise<{ success: boolean, processedAnnotations: number, notFound: string[] }>}
    */
+  /**
+   * Legge i primi 500KB del PDF e li restituisce come base64 per l'anteprima.
+   * Usa data: URI nel renderer — nessun blob: URL (rispetta la CSP).
+   *
+   * @param {Electron.IpcMainInvokeEvent} _event
+   * @param {string} filePath - Percorso assoluto del PDF
+   * @returns {Promise<{ base64: string }>}
+   */
+  ipcMain.handle(IPC_CHANNELS.READ_PDF_BASE64, async (_event, filePath) => {
+    const buffer = await fs.promises.readFile(filePath);
+    const sliced = buffer.slice(0, 500 * 1024);
+    return { base64: sliced.toString('base64') };
+  });
+
   ipcMain.handle(IPC_CHANNELS.PDF_PROCESS, async (_event, data) => {
     const { mainPdfPath, attachments, outputFolder } = data;
     console.log(

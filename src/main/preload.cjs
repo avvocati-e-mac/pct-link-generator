@@ -7,6 +7,7 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 const IPC_CHANNELS = {
   PDF_PROCESS:          'pdf:process',
   DIALOG_SELECT_FOLDER: 'dialog:selectOutputFolder',
+  READ_PDF_BASE64:      'read-pdf-as-base64',
 };
 
 /**
@@ -39,4 +40,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {string} Percorso assoluto del file
    */
   getPathForFile: (file) => webUtils.getPathForFile(file),
+
+  /**
+   * Legge i primi 500KB del PDF e li restituisce come base64.
+   * Usato per mostrare un'anteprima del PDF atto principale senza blob: URL.
+   *
+   * @param {string} filePath - Percorso assoluto del PDF
+   * @returns {Promise<{ base64: string }>}
+   */
+  readPdfAsBase64: (filePath) => ipcRenderer.invoke(IPC_CHANNELS.READ_PDF_BASE64, filePath),
 });
