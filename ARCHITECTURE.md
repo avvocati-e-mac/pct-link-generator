@@ -14,18 +14,19 @@
 │  │  pdf-processor.js    │ invoke   │  renderer.js                 │ │
 │  │                      │          │  style.css                   │ │
 │  │  • BrowserWindow     │          │                              │ │
-│  │  • ipcMain.handle    │          │  • Drag & drop zones         │ │
-│  │  • dialog API        │          │  • Reorderable list          │ │
-│  │  • fs, path          │          │  • window.electronAPI calls  │ │
-│  │  • mupdf             │          │                              │ │
-│  │  • pdf-lib           │          └──────────────────────────────┘ │
-│  └──────────────────────┘                        ▲                  │
-│            ▲                                     │                  │
+│  │  • ipcMain.handle    │          │  • Step 1: drag PDF atto     │ │
+│  │  • dialog API        │          │  • Step 2: drag allegati     │ │
+│  │  • fs, path          │          │  • Drag & drop riordino      │ │
+│  │  • mupdf             │          │  • Modale anteprima          │ │
+│  │  • pdf-lib           │          │  • window.electronAPI calls  │ │
+│  └──────────────────────┘          └──────────────────────────────┘ │
+│            ▲                                     ▲                  │
+│            │                                     │                  │
 │            │                         ┌───────────┴──────────────┐  │
 │            └─────────────────────────┤      PRELOAD SCRIPT      │  │
 │                  contextBridge        │      preload.js          │  │
 │                                       │                          │  │
-│                                       │  expone window.          │  │
+│                                       │  espone window.          │  │
 │                                       │  electronAPI             │  │
 │                                       │  (contextBridge)         │  │
 │                                       └──────────────────────────┘  │
@@ -36,12 +37,35 @@
 
 ## Canali IPC
 
+Tutti i canali sono definiti come costanti in `src/shared/types.js`. Mai hardcodare le stringhe.
+
 | Canale | Direzione | Payload input | Payload output |
 |--------|-----------|---------------|----------------|
-| `pdf:process` | Renderer → Main | `{ mainPdfPath: string, attachments: Array<{path: string, name: string, label: string}> }` | `{ success: boolean, processedAnnotations: number, notFound: string[] }` |
-| `dialog:selectOutputFolder` | Renderer → Main | nessuno | `string \| null` (percorso cartella scelta) |
+| `pdf:process` | Renderer → Main | `{ mainPdfPath: string, attachments: Attachment[], outputFolder: string }` | `ProcessResult` |
+| `dialog:selectOutputFolder` | Renderer → Main | nessuno | `string \| null` |
 
 Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/response).
+
+---
+
+## Tipi condivisi (`src/shared/types.js`)
+
+```javascript
+/**
+ * @typedef {Object} Attachment
+ * @property {string} path  - Percorso assoluto del file allegato
+ * @property {string} name  - Nome file (es. "01_Comparsa.pdf")
+ * @property {string} label - Numero di posizione come stringa (es. "1", "2")
+ */
+
+/**
+ * @typedef {Object} ProcessResult
+ * @property {boolean}  success              - Sempre true (anche con notFound)
+ * @property {number}   processedAnnotations - Annotazioni aggiunte
+ * @property {string[]} notFound             - Posizioni non trovate nel PDF
+ * @property {string[]} unsupportedPatterns  - Pattern bis/ter trovati ma non linkati
+ */
+```
 
 ---
 
@@ -49,9 +73,9 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 
 | File | Responsabilità |
 |------|----------------|
-| `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC, gestisce lifecycle app (`app.whenReady`, `window-all-closed`). **Nessuna logica PDF.** |
+| `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC, gestisce lifecycle app. **Nessuna logica PDF.** |
 | `preload.js` | Bridge sicuro. Espone `window.electronAPI` via `contextBridge`. Mai `ipcRenderer` diretto. |
-| `pdf-processor.js` | Tutta la logica PDF: legge coordinate testo con mupdf (per-carattere), scrive annotazioni link con pdf-lib, orchestra il processo completo. **Nessun codice Electron.** |
+| `pdf-processor.js` | Tutta la logica PDF: estrae coordinate testo con mupdf (per-carattere), scrive annotazioni link con pdf-lib, orchestra il processo. **Nessun codice Electron.** |
 
 ---
 
@@ -59,9 +83,9 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 
 | File | Responsabilità |
 |------|----------------|
-| `index.html` | Shell HTML. Due zone drag & drop, lista allegati, pulsante "Genera Link", area messaggi di stato. |
-| `renderer.js` | Logica UI: gestione drag & drop, lista riordinabile allegati, chiamate a `window.electronAPI`, aggiornamento stato. |
-| `style.css` | Stili vanilla: layout a due colonne flexbox, drag & drop highlighting, lista allegati, stati pulsante. |
+| `index.html` | Shell HTML. Step 1 (drop PDF atto), Step 2 (drop allegati, lista riordinabile), modale anteprima, area stato. |
+| `renderer.js` | Logica UI: navigazione step 1/2, drag & drop allegati con riordino, multi-selezione, modale preview, chiamate `window.electronAPI`. |
+| `style.css` | Stili vanilla: layout flexbox, step views, drag highlighting (`.drag-over`, `.dragging`), lista allegati scrollabile. |
 
 ---
 
@@ -70,33 +94,51 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 ```
 UTENTE
   │
-  ├─ Drag & drop PDF atto principale
+  ├─ Step 1: Drag & drop PDF atto principale
   │     → renderer.js cattura evento drop
   │     → webUtils.getPathForFile(file) → percorso assoluto
-  │     → aggiorna UI (mostra nome file)
+  │     → aggiorna UI, abilita pulsante "Avanti →"
   │
-  ├─ Drag & drop allegati (ripetuto)
+  ├─ Step 2: Drag & drop allegati (ripetuto)
   │     → renderer.js cattura evento drop
   │     → webUtils.getPathForFile(file) → percorso assoluto
-  │     → aggiunge a lista con label default "doc. N"
-  │     → UI: lista riordinabile con ▲ ▼ ✕
+  │     → aggiunge a lista con label = numero di posizione (1-based)
+  │     → UI: lista scrollabile con drag handle ⠿, numero posizione, ✕
+  │     → riordino via drag & drop HTML5 nativo → aggiorna posizioni
   │
-  └─ Click "Genera Link"
+  ├─ Click "Genera link"
+  │     → openPreviewModal(): mostra riepilogo atto + allegati ordinati
+  │     → utente conferma "OK — Genera"
+  │
+  └─ Conferma nella modale
         │
         ├─ window.electronAPI.selectOutputFolder()
         │     → IPC: dialog:selectOutputFolder
         │     → main.js: dialog.showOpenDialog()
         │     → restituisce percorso cartella
         │
-        └─ window.electronAPI.processPDF({ mainPdfPath, attachments })
+        └─ window.electronAPI.processPDF({ mainPdfPath, attachments, outputFolder })
+              │  attachments[i].label = String(i + 1)  ← numero posizione
               │
               → IPC: pdf:process
               │
               → main.js → pdf-processor.js
                     │
+                    ├─ findUnsupportedBisPatterns(doc)
+                    │     → scansiona PDF per pattern {prefisso}{N}bis/ter/quater
+                    │     → restituisce string[] (segnalati in UI)
+                    │
                     ├─ fs.copyFile: copia allegati in outputFolder
                     │
-                    ├─ Per ogni allegato:
+                    ├─ Per ogni allegato (label = "1", "2", "3"…):
+                    │     buildSearchRegex(label)
+                    │       → Caso A (label solo numero):
+                    │           regex con prefisso OBBLIGATORIO:
+                    │           (?:doc\.?|documento|all\.?|allegato|att\.?|…)\s+(?:n\.?\s*)?N(?![a-zA-Z0-9])
+                    │           → fa match su "doc. 1", "allegato n. 1", "Documento n. 1"…
+                    │           → NON fa match su "1" isolato, importi, P.IVA
+                    │       → Caso B (label con prefisso es. "doc. 1"):
+                    │           espansione sinonimi via LABEL_SYNONYM_GROUPS
                     │     findTextCoordinates(mainPdfPath, label)
                     │       → mupdf: apre PDF, stext.walk() per-carattere
                     │       → extractCharRuns(): raggruppa char in righe fisiche
@@ -111,11 +153,41 @@ UTENTE
                     │           aggiungi dict /Link con /Launch relativa
                     │       → salva PDF modificato in outputFolder
                     │
-                    └─ restituisce { success, processedAnnotations, notFound }
+                    └─ restituisce { success, processedAnnotations, notFound, unsupportedPatterns }
                           │
                     → IPC response → renderer.js
-                    → UI: mostra "Completato ✓" o errore parziale
+                    → UI: "Completato ✓" o avviso parziale
+                    → Se unsupportedPatterns: avviso giallo con lista pattern non linkati
 ```
+
+---
+
+## Logica `buildSearchRegex` (CRITICO)
+
+```javascript
+export const LABEL_SYNONYM_GROUPS = [
+  ['doc', 'documento', 'all', 'allegato', 'att', 'attaccato', 'ex'],
+];
+
+export function buildSearchRegex(label) {
+  // CASO A: label è solo un numero (es. "1", "11", "100")
+  // Prefisso OBBLIGATORIO — evita match su numeri isolati nel testo
+  if (/^\d+$/.test(label.trim())) {
+    const SYNONYMS_PREFIX_REQUIRED =
+      '(?:doc\\.?|documento|all\\.?|allegato|att\\.?|attaccato|ex)\\s+(?:n\\.?\\s*)?';
+    return new RegExp(SYNONYMS_PREFIX_REQUIRED + numEscaped + '(?![a-zA-Z0-9])', 'i');
+  }
+
+  // CASO B: label con prefisso (es. "doc. 1", "allegato A")
+  // Espande il primo token con sinonimi dal gruppo
+  // Unisce token con [\s.]* per flessibilità
+  // Aggiunge lookahead negativo (?![a-zA-Z0-9]) finale
+}
+```
+
+**Esempi Caso A (`"1"`):**
+- ✅ `"doc. 1"`, `"Doc.1"`, `"allegato 1"`, `"Allegato n. 1"`, `"Documento n. 1"`, `"allegato 1 bis"`
+- ❌ `"1"` standalone, `"doc. 11"`, `"1a"`, `"doc. 1bis"`, importi, P.IVA
 
 ---
 
@@ -136,17 +208,6 @@ const yTop    = quad[1]; // ul.y — bordo superiore
 const yBottom = quad[5]; // ll.y — bordo inferiore  (NON quad[6] che è lr.x!)
 const xLeft   = quad[0]; // ul.x
 const xRight  = quad[2]; // ur.x
-```
-
-### Apertura documento
-
-```javascript
-import mupdf from 'mupdf';
-
-const buffer = await fs.promises.readFile(pdfPath);
-const doc = mupdf.Document.openDocument(new Uint8Array(buffer), 'application/pdf');
-const numPages = doc.countPages();
-const page = doc.loadPage(pageIndex); // 0-based
 ```
 
 ### Separazione righe fisiche
@@ -223,15 +284,6 @@ const linkDict = pdfDoc.context.obj({
     NewWindow: true,
   },
 });
-
-// 3. Aggiunta alla pagina
-const annotsKey = PDFName.of('Annots');
-const existingAnnots = page.node.get(annotsKey);
-if (existingAnnots) {
-  existingAnnots.push(linkDict);
-} else {
-  page.node.set(annotsKey, pdfDoc.context.obj([linkDict]));
-}
 ```
 
 **Nota:** `targetFile` è solo il nome file (non il percorso assoluto) — la Launch action

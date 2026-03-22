@@ -4,10 +4,10 @@ App desktop Electron per aggiungere annotazioni link cliccabili ai PDF degli att
 
 ## Cosa fa
 
-1. Trascini il PDF dell'atto principale
-2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML), riordinabili a piacere
-3. Assegni a ogni allegato un'etichetta di ricerca (es. `doc. 1`)
-4. L'app trova quella etichetta nel testo dell'atto, aggiunge una sottolineatura blu e un link cliccabile che apre il file allegato
+1. Trascini il PDF dell'atto principale (Step 1)
+2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2)
+3. Rivedi il riepilogo nella modale di anteprima prima di confermare
+4. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link cliccabile che apre il file allegato
 5. Salva l'atto modificato e tutti gli allegati nella cartella di output scelta
 
 **Uso tipico:** avvocati e professionisti che depositano atti telematici PCT.
@@ -53,7 +53,7 @@ npm start
 npm test
 ```
 
-16 test Vitest, tutti verdi.
+65 test Vitest, tutti verdi.
 
 ## Stack
 
@@ -74,7 +74,7 @@ src/
 │   ├── preload.js         # contextBridge → window.electronAPI
 │   └── pdf-processor.js  # Logica PDF (mupdf + pdf-lib)
 ├── renderer/
-│   ├── index.html         # UI drag & drop
+│   ├── index.html         # UI multi-step drag & drop
 │   ├── renderer.js        # Logica UI
 │   └── style.css
 └── shared/
@@ -82,6 +82,18 @@ src/
 tests/
 └── pdf-processor.test.js
 ```
+
+## Logica di ricerca
+
+Il software associa ogni allegato alla sua **posizione** nella lista (1, 2, 3…). Per ogni posizione costruisce una regex che cerca tutte le varianti italiane comuni:
+
+- `doc. 1`, `Doc.1`, `DOC. 1`
+- `allegato 1`, `Allegato 1`
+- `documento 1`, `Documento n. 1`
+- `all. 1`, `All. 1`, `att. 1`
+- `allegato n. 1` (con `n.` intermedio)
+
+Pattern non supportati (es. `doc. 1bis` senza spazio): vengono rilevati e segnalati all'utente con un avviso.
 
 ## Note tecniche
 
@@ -95,6 +107,8 @@ tests/
 - [x] Fase 2 — Core services (findTextCoordinates, addUnderlineLink)
 - [x] Fase 3 — IPC e Preload
 - [x] Fase 4 — UI Renderer
-- [x] Fase 5 — Test (16/16 verdi)
-- [ ] Fase 6 — Packaging (electron-builder)
-- [ ] Fase 7 — UX miglioramenti (progress bar, notifiche)
+- [x] Fase 5 — Test (65/65 verdi)
+- [x] Fase 6a — UI multi-step, drag & drop riordino, modale anteprima
+- [x] Fase 6b — Regex sinonimi italiani PCT, prefisso obbligatorio, rilevamento bis/ter
+- [ ] Fase 7 — Packaging (electron-builder, DMG/EXE)
+- [ ] Fase 8 — UX (progress bar, notifiche native, apertura cartella output)
