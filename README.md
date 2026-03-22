@@ -6,7 +6,7 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT — crea
 
 ## Indice
 
-- [Cosa fa](#cosa-fa)
+- [Come funziona?](#come-funiziona?)
 - [Download](#download)
 - [Installazione su macOS](#installazione-su-macos-dmg)
 - [Installazione su Windows](#installazione-su-windows-exe)
@@ -16,7 +16,7 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT — crea
 
 ---
 
-## Cosa fa
+## Come funziona?
 
 1. Trascini il PDF dell'atto principale (Step 1)
 2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2)
