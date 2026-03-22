@@ -56,6 +56,16 @@
         <input type="number" id="input-start-index" min="1" value="1" class="start-index-input" />
       </div>
 
+      <div class="rename-scheme-row">
+        <label for="rename-scheme">Rinomina allegati nell'output:</label>
+        <select id="rename-scheme" class="rename-scheme-select">
+          <option value="none">Nessuna rinomina</option>
+          <option value="numbered">01, 02, 03…</option>
+          <option value="doc_">doc_01, doc_02…</option>
+          <option value="allegato_">allegato_01, allegato_02…</option>
+        </select>
+      </div>
+
       <div class="drop-zone" id="drop-zone-attachments" role="button" tabindex="0"
            aria-label="Zona drop per gli allegati">
         <div class="drop-zone-inner">

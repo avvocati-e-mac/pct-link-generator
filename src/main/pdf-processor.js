@@ -402,10 +402,12 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
   }
 
   // 1. Copia allegati nella cartella di output
+  // Usa att.renamedAs come nome destinazione se fornito (rinomina solo nell'output)
   for (const att of attachments) {
-    const destPath = path.join(outputFolder, att.name);
+    const destName = att.renamedAs || att.name;
+    const destPath = path.join(outputFolder, destName);
     await fs.promises.copyFile(att.path, destPath);
-    console.log(`[PDF] Copiato allegato: ${att.name}`);
+    console.log(`[PDF] Copiato allegato: ${destName}`);
   }
 
   // 2. Cerca le etichette e raccoglie le annotazioni
@@ -419,6 +421,7 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
       notFound.push(att.label);
       console.log(`[PDF] Etichetta non trovata: "${att.label}"`);
     } else {
+      const destName = att.renamedAs || att.name;
       for (const match of matches) {
         allAnnotations.push({
           pageIndex: match.pageIndex,
@@ -426,7 +429,7 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
           y:         match.y,
           width:     match.width,
           height:    match.height,
-          targetFile: att.name, // nome relativo — entrambi i file nella stessa cartella
+          targetFile: destName, // nome relativo — entrambi i file nella stessa cartella
         });
       }
       console.log(`[PDF] Trovati ${matches.length} match per: "${att.label}"`);
@@ -445,4 +448,42 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
     notFound,
     unsupportedPatterns,
   };
+}
+
+// ===== Rilevamento e rinomina numerica allegati =====
+
+/**
+ * Verifica se il nome file inizia già con un pattern numerico.
+ * Pattern supportati: "01_file.pdf", "1-file.pdf", "1 file.pdf", "doc_1_file.pdf".
+ *
+ * @param {string} name - Nome file (solo il basename, es. "contratto.pdf")
+ * @returns {boolean}
+ */
+export function hasLeadingNumber(name) {
+  return /^\d+[-_\s]/.test(name) || /^doc[-_]\d+/i.test(name);
+}
+
+/**
+ * Costruisce il nuovo nome file secondo lo schema di rinomina scelto.
+ * Se il file ha già un numero iniziale, ritorna il nome originale invariato.
+ *
+ * @param {string} originalName - Nome file originale (es. "contratto.pdf")
+ * @param {'numbered'|'doc_'|'allegato_'} scheme - Schema di rinomina
+ * @param {number} index - Indice 1-based dell'allegato nella lista
+ * @param {number} [total=1] - Numero totale di allegati (per calcolare zero-padding)
+ * @returns {string} Nuovo nome file
+ */
+export function buildRenamedName(originalName, scheme, index, total = 1) {
+  if (hasLeadingNumber(originalName)) return originalName;
+
+  // Calcola zero-padding in base al totale
+  const padLen = total <= 9 ? 1 : total <= 99 ? 2 : 3;
+  const padded = String(index).padStart(padLen, '0');
+
+  switch (scheme) {
+    case 'numbered':  return `${padded}_${originalName}`;
+    case 'doc_':      return `doc_${padded}_${originalName}`;
+    case 'allegato_': return `allegato_${padded}_${originalName}`;
+    default:          return originalName;
+  }
 }

@@ -17,6 +17,8 @@ import {
   processPCTDocument,
   LABEL_SYNONYM_GROUPS,
   SYNONYMS_PREFIX_PATTERN,
+  hasLeadingNumber,
+  buildRenamedName,
 } from '../src/main/pdf-processor.js';
 
 // ===== Utilità per test =====
@@ -296,5 +298,61 @@ describe('processPCTDocument — copia allegati', () => {
 
     expect(fs.existsSync(path.join(outputFolder, 'att_test_1.pdf'))).toBe(true);
     expect(fs.existsSync(path.join(outputFolder, 'att_test_2.pdf'))).toBe(true);
+  });
+});
+
+// ===== hasLeadingNumber =====
+
+describe('hasLeadingNumber', () => {
+  it('riconosce nome con numero e underscore', () => {
+    expect(hasLeadingNumber('01_contratto.pdf')).toBe(true);
+  });
+
+  it('riconosce nome con numero e trattino', () => {
+    expect(hasLeadingNumber('1-contratto.pdf')).toBe(true);
+  });
+
+  it('riconosce nome con numero e spazio', () => {
+    expect(hasLeadingNumber('1 contratto.pdf')).toBe(true);
+  });
+
+  it('riconosce nome doc_N', () => {
+    expect(hasLeadingNumber('doc_1_contratto.pdf')).toBe(true);
+  });
+
+  it('ritorna false per nome senza numero iniziale', () => {
+    expect(hasLeadingNumber('contratto.pdf')).toBe(false);
+  });
+
+  it('ritorna false per nome che inizia con lettera', () => {
+    expect(hasLeadingNumber('allegato_contratto.pdf')).toBe(false);
+  });
+});
+
+// ===== buildRenamedName =====
+
+describe('buildRenamedName', () => {
+  it('schema numbered: aggiunge numero con padding', () => {
+    expect(buildRenamedName('contratto.pdf', 'numbered', 1, 1)).toBe('1_contratto.pdf');
+  });
+
+  it('schema numbered: usa zero-padding per totale > 9', () => {
+    expect(buildRenamedName('contratto.pdf', 'numbered', 1, 10)).toBe('01_contratto.pdf');
+  });
+
+  it('schema doc_: aggiunge prefisso doc_', () => {
+    expect(buildRenamedName('contratto.pdf', 'doc_', 1, 10)).toBe('doc_01_contratto.pdf');
+  });
+
+  it('schema allegato_: aggiunge prefisso allegato_', () => {
+    expect(buildRenamedName('contratto.pdf', 'allegato_', 1, 10)).toBe('allegato_01_contratto.pdf');
+  });
+
+  it('non rinomina se il file ha già un numero iniziale', () => {
+    expect(buildRenamedName('01_contratto.pdf', 'numbered', 1, 10)).toBe('01_contratto.pdf');
+  });
+
+  it('schema none (default): ritorna nome originale', () => {
+    expect(buildRenamedName('contratto.pdf', 'none', 1, 1)).toBe('contratto.pdf');
   });
 });

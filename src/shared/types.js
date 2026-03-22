@@ -17,9 +17,10 @@ export const IPC_CHANNELS = {
 
 /**
  * @typedef {Object} Attachment
- * @property {string} path  - Percorso assoluto del file allegato
- * @property {string} name  - Nome file (es. "allegato_1.pdf")
- * @property {string} label - Etichetta di ricerca nell'atto (numero di posizione, es. "1")
+ * @property {string}  path       - Percorso assoluto del file allegato
+ * @property {string}  name       - Nome file originale (es. "contratto.pdf")
+ * @property {string}  label      - Etichetta di ricerca nell'atto (numero di posizione, es. "1")
+ * @property {string}  [renamedAs] - Nome da usare nella cartella di output (opzionale, rinomina solo l'output)
  */
 
 /**

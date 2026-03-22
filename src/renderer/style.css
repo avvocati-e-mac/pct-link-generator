@@ -178,6 +178,27 @@ main {
   border: 1px solid #ccc;
 }
 
+.rename-scheme-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.rename-scheme-select {
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 13px;
+}
+
+.no-number-badge {
+  font-size: 11px;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+
 /* ===== Lista allegati ===== */
 .attachments-list {
   list-style: none;

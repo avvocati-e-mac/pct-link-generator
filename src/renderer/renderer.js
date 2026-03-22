@@ -66,6 +66,7 @@ const bulkRemoveRow       = document.getElementById('bulk-remove-row');
 const btnRemoveSelected   = document.getElementById('btn-remove-selected');
 
 const inputStartIndex     = document.getElementById('input-start-index');
+const renameSchemeSelect  = document.getElementById('rename-scheme');
 
 const statusArea          = document.getElementById('status-area');
 const statusMessage       = document.getElementById('status-message');
@@ -77,7 +78,18 @@ const previewTbody        = document.getElementById('preview-tbody');
 const btnModalCancel      = document.getElementById('btn-modal-cancel');
 const btnModalConfirm     = document.getElementById('btn-modal-confirm');
 
-// ===== Numero di partenza allegati =====
+// ===== Numero di partenza e rinomina allegati =====
+
+/**
+ * Verifica se il nome file inizia già con un pattern numerico.
+ * Stessa logica di hasLeadingNumber in pdf-processor.js.
+ *
+ * @param {string} name - Nome file
+ * @returns {boolean}
+ */
+function hasLeadingNumber(name) {
+  return /^\d+[-_\s]/.test(name) || /^doc[-_]\d+/i.test(name);
+}
 
 /**
  * Restituisce il numero di partenza per la numerazione degli allegati.
@@ -91,6 +103,27 @@ function getStartIndex() {
 }
 
 inputStartIndex.addEventListener('input', () => renderAttachmentsList());
+
+/**
+ * Costruisce il nuovo nome file secondo lo schema di rinomina scelto.
+ * Stessa logica di buildRenamedName in pdf-processor.js.
+ *
+ * @param {string} originalName
+ * @param {'numbered'|'doc_'|'allegato_'} scheme
+ * @param {number} index - Numero 1-based (già calcolato con startIndex)
+ * @param {number} total - Totale allegati per zero-padding
+ * @returns {string}
+ */
+function buildRenamedName(originalName, scheme, index, total) {
+  const padLen = total <= 9 ? 1 : total <= 99 ? 2 : 3;
+  const padded = String(index).padStart(padLen, '0');
+  switch (scheme) {
+    case 'numbered':  return `${padded}_${originalName}`;
+    case 'doc_':      return `doc_${padded}_${originalName}`;
+    case 'allegato_': return `allegato_${padded}_${originalName}`;
+    default:          return originalName;
+  }
+}
 
 // ===== Navigazione Step 1 ↔ Step 2 =====
 
@@ -374,10 +407,11 @@ function renderAttachmentsList() {
     if (selectedIds.has(att.id)) li.classList.add('selected');
     li.dataset.id = att.id;
 
+    const noNumBadge = hasLeadingNumber(att.name) ? '' : '<span class="no-number-badge" title="Nome file senza numero iniziale">⚠️</span>';
     li.innerHTML = `
       <span class="drag-handle" draggable="true" aria-label="Trascina per riordinare">⠿</span>
       <span class="att-number">${getStartIndex() + idx}</span>
-      <span class="att-name" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</span>
+      <span class="att-name" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}${noNumBadge}</span>
       <div class="attachment-controls">
         <button class="btn-remove btn-del" aria-label="Rimuovi allegato">✕</button>
       </div>
@@ -466,11 +500,18 @@ async function runGeneration() {
     const result = await window.electronAPI.processPDF({
       mainPdfPath,
       // La label è la posizione a partire da startIndex, come stringa
-      attachments: attachments.map((att, idx) => ({
-        path:  att.path,
-        name:  att.name,
-        label: String(getStartIndex() + idx),
-      })),
+      attachments: attachments.map((att, idx) => {
+        const scheme = renameSchemeSelect.value;
+        const renamedAs = (scheme !== 'none' && !hasLeadingNumber(att.name))
+          ? buildRenamedName(att.name, scheme, getStartIndex() + idx, attachments.length)
+          : undefined;
+        return {
+          path: att.path,
+          name: att.name,
+          label: String(getStartIndex() + idx),
+          ...(renamedAs ? { renamedAs } : {}),
+        };
+      }),
       outputFolder,
     });
 
