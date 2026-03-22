@@ -5,11 +5,16 @@
 
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath, pathToFileURL } from 'url';
+import { createRequire } from 'module';
 import { PDFDocument, rgb, PDFName } from 'pdf-lib';
 
-// pdfjs-dist in Node.js: build legacy con worker disabilitato
-import pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-pdfjsLib.GlobalWorkerOptions.workerSrc = '';
+// pdfjs-dist in Node.js: build legacy, workerSrc punta al file locale
+// Nota: non ha default export, si usa import * as
+import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
+const _require = createRequire(import.meta.url);
+const _workerPath = _require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
+pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(_workerPath).href;
 
 // ===== Funzione di matching flessibile =====
 
@@ -21,15 +26,16 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = '';
  * @returns {RegExp}
  */
 export function buildSearchRegex(label) {
-  // Normalizza la label: rimuove spazi multipli, rende case-insensitive
-  // Sostituisce il separatore (punto o spazio) tra parola e numero con [\s.]*
-  // Es: "doc. 1" → /doc[\s.]*1/i
-  const escaped = label
-    .trim()
-    .replace(/[.*+?^${}()|[\]\\]/g, '\\$&') // escapa caratteri speciali regex
-    .replace(/\.\s*/g, '[\\s.]*')            // "." → [\s.]* (punto opzionale con spazi)
-    .replace(/\s+/g, '[\\s.]*');              // spazi → [\s.]* (spazio o punto opzionali)
-  return new RegExp(escaped, 'i');
+  // Strategia: splitta la label in token alfanumerici, poi li unisce con [\s.]*
+  // "doc. 1" → tokens ["doc", "1"] → /doc[\s.]*1\b/i
+  // Questo trova "Doc.1", "doc 1", "DOC. 1", ecc.
+  // Il \b finale evita falsi positivi: "doc. 1" non trova "doc. 11"
+  const normalized = label.trim();
+  const tokens = normalized.match(/[a-zA-ZàèéìòùÀÈÉÌÒÙ]+|\d+/g) || [];
+  const pattern = tokens
+    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('[\\s.]*');
+  return new RegExp(pattern + '\\b', 'i');
 }
 
 // ===== Lettura coordinate testo =====
@@ -50,7 +56,6 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
   try {
     const loadingTask = pdfjsLib.getDocument({
       data: uint8Array,
-      disableWorker: true,
       verbosity: 0,
     });
     pdfDocument = await loadingTask.promise;

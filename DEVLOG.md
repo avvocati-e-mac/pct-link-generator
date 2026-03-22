@@ -56,48 +56,83 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
-## Commit 1 — chore: init project structure (da completare)
+## Commit 1 — chore: init project structure
 
-> Da aggiornare dopo la creazione della struttura.
-
----
-
-## Commit 2 — feat: electron main process with IPC skeleton (da completare)
-
-> Da aggiornare dopo la creazione di main.js.
+- Struttura cartelle `src/main/`, `src/renderer/`, `tests/`
+- `package.json` con `"type": "module"`, `"main": "src/main/main.js"`, electron 33, pdfjs-dist 4.x, pdf-lib, vitest
+- `.gitignore`, `ARCHITECTURE.md`, `DEVLOG.md`
 
 ---
 
-## Commit 3 — feat: preload bridge with contextBridge (da completare)
+## Commit 2 — feat: electron main process with IPC skeleton
 
-> Da aggiornare dopo la creazione di preload.js.
-
----
-
-## Commit 4 — feat: renderer UI with drag & drop and reorderable list (da completare)
-
-> Da aggiornare dopo la creazione del renderer.
+- `BrowserWindow` con `contextIsolation: true`, `nodeIntegration: false`
+- Handler IPC `dialog:selectOutputFolder` → `dialog.showOpenDialog`
+- Handler IPC `pdf:process` → delega a `pdf-processor.js`
+- Gestione lifecycle macOS/Windows/Linux
 
 ---
 
-## Commit 5 — feat: pdf-processor read text coordinates (da completare)
+## Commit 3 — feat: preload bridge with contextBridge
 
-> Da aggiornare dopo la creazione di findTextCoordinates.
-
----
-
-## Commit 6 — feat: pdf-processor write link annotation (da completare)
-
-> Da aggiornare dopo la creazione di addUnderlineLink.
+- `contextBridge.exposeInMainWorld('electronAPI', ...)`
+- `processPDF`, `selectOutputFolder`, `getPathForFile` (via `webUtils`)
+- `ipcRenderer` non esposto direttamente
 
 ---
 
-## Commit 7 — feat: pdf-processor orchestrator function (da completare)
+## Commit 4 — feat: renderer UI with drag & drop and reorderable list
 
-> Da aggiornare dopo la creazione di processPCTDocument.
+- Due zone drop (atto principale: solo PDF; allegati: PDF, EML, MSG, JPG)
+- Lista allegati riordinabile con ▲ ▼ ✕ e campo etichetta editabile
+- Percorso assoluto via `window.electronAPI.getPathForFile(file)`
+- Pulsante "Genera Link" disabilitato se mancano input
+- Messaggi di stato in elementi HTML (nessun `alert()`)
+- Layout due colonne flexbox, stili vanilla CSS
 
 ---
 
-## Commit 8 — test: pdf-processor unit tests (da completare)
+## Commit 5 — feat: pdf-processor read text coordinates
 
-> Da aggiornare dopo la scrittura dei test Vitest.
+- `findTextCoordinates` con pdfjs-dist legacy, workerSrc = file URL del worker locale
+- Scoperto problema: pdfjs 4.x non ha `default` export → uso `import * as pdfjsLib`
+- `disableWorker: true` non funziona in v4 → workerSrc punta al file `.worker.mjs`
+- `buildSearchRegex` corretta: tokenizza per parole/numeri + `[\s.]*` + `\b`
+
+---
+
+## Commit 6 — feat: pdf-processor write link annotation
+
+- `addUnderlineLink`: inversione asse Y `yPdfLib = pageHeight - y - height`
+- Sottolineatura blu con `page.drawLine`
+- Annotazione `/Link /Launch` relativa con `pdfDoc.context.obj` a basso livello
+- `targetFile` = solo nome file (Launch relativa, entrambi i file in stessa cartella)
+
+---
+
+## Commit 7 — feat: pdf-processor orchestrator function
+
+- `processPCTDocument`: copia allegati → cerca etichette → aggiunge annotazioni
+- Risultato parziale se `notFound.length > 0`, nessuna eccezione
+- Collegato all'handler IPC `pdf:process` in `main.js`
+
+---
+
+## Commit 8 — test: pdf-processor unit tests
+
+**16 test tutti verdi.**
+
+- Test 1: formula inversione asse Y (842 - 700 - 12 = 130)
+- Test 2: regex matching flessibile (10 casi: "Doc.1", "doc 1", "DOC. 1"...)
+- Test 3: `findTextCoordinates` con PDF sintetico generato con pdf-lib
+- Test 4: `processPCTDocument` restituisce `notFound` e `success=true` (no throw)
+- Test 5: `processPCTDocument` copia allegati nella outputFolder
+
+**Problema risolto:** `buildSearchRegex` aveva un bug — l'escape dei caratteri speciali
+avveniva prima della trasformazione dei separatori, producendo regex rotte come
+`/doc\[\s.]*1/i`. Soluzione: tokenizzazione per parole/numeri con `.match()` e
+join con `[\s.]*` + `\b`.
+
+**Problema risolto:** pdfjs-dist 4.x non funziona con `disableWorker: true` né
+con `workerSrc = ''` — richiede il path del worker come `file://` URL. Usato
+`createRequire + pathToFileURL` per risolvere il path corretto.
