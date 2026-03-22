@@ -18,11 +18,12 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT — crea
 
 ## Come funziona?
 
-1. Trascini il PDF dell'atto principale (Step 1);
+1. Trascini il PDF dell'atto principale (Step 1) — l'app mostra un'anteprima immediata del documento;
 2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2);
-3. Rivedi il riepilogo nella modale di anteprima prima di confermare (Step 3);
-4. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link cliccabile che apre il file allegato;
-5. Salva l'atto modificato e tutti gli allegati nella cartella di output scelta.
+3. Scegli il numero di partenza (default: 1) e, se vuoi, uno schema di rinomina automatica dei file nell'output (es. `01_`, `doc_01_`, `allegato_01_`);
+4. Rivedi il riepilogo nella modale di anteprima prima di confermare;
+5. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link cliccabile che apre il file allegato;
+6. Salva l'atto modificato e tutti gli allegati nella cartella di output scelta.
 
 **Uso tipico:** avvocati e professionisti che depositano atti telematici del Processo Civile Telematico (PCT).
 
@@ -117,7 +118,7 @@ Zero connessioni di rete. Tutto viene elaborato localmente sul tuo computer. GDP
 
 ## Logica di ricerca
 
-Il software associa ogni allegato alla sua **posizione** nella lista (1, 2, 3…). Per ogni posizione cerca nell'atto tutte le varianti italiane comuni:
+Il software associa ogni allegato alla sua **posizione** nella lista (partendo dal numero che scegli tu). Per ogni posizione cerca nell'atto tutte le varianti italiane comuni:
 
 - `doc. 1`, `Doc.1`, `DOC. 1`
 - `allegato 1`, `Allegato 1`
@@ -154,7 +155,7 @@ npm start
 npm test
 ```
 
-65 test Vitest, tutti verdi (v0.2.0).
+77 test Vitest, tutti verdi (v0.2.0).
 
 ### Struttura
 
@@ -183,6 +184,7 @@ tests/
 - [x] Fase 5 — Test (65/65 verdi)
 - [x] Fase 6a — UI multi-step, drag & drop riordino, modale anteprima
 - [x] Fase 6b — Regex sinonimi italiani PCT, prefisso obbligatorio, rilevamento bis/ter
+- [x] Fase 6c — Dark mode, anteprima PDF, startIndex, rinomina allegati, verifica natività
 - [ ] Fase 7 — Packaging (electron-builder, DMG/EXE)
 - [ ] Fase 8 — UX (progress bar, notifiche native, apertura cartella output)
 

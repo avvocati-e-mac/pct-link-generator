@@ -43,6 +43,7 @@ Tutti i canali sono definiti come costanti in `src/shared/types.js`. Mai hardcod
 |--------|-----------|---------------|----------------|
 | `pdf:process` | Renderer → Main | `{ mainPdfPath: string, attachments: Attachment[], outputFolder: string }` | `ProcessResult` |
 | `dialog:selectOutputFolder` | Renderer → Main | nessuno | `string \| null` |
+| `read-pdf-as-base64` | Renderer → Main | `filePath: string` | `{ base64: string }` |
 
 Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/response).
 
@@ -53,17 +54,19 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 ```javascript
 /**
  * @typedef {Object} Attachment
- * @property {string} path  - Percorso assoluto del file allegato
- * @property {string} name  - Nome file (es. "01_Comparsa.pdf")
- * @property {string} label - Numero di posizione come stringa (es. "1", "2")
+ * @property {string}  path       - Percorso assoluto del file allegato
+ * @property {string}  name       - Nome file originale (es. "Comparsa.pdf")
+ * @property {string}  label      - Numero di posizione come stringa (es. "1", "2")
+ * @property {string}  [renamedAs] - Nome file nell'output se rinomina attiva (opzionale)
  */
 
 /**
  * @typedef {Object} ProcessResult
- * @property {boolean}  success              - Sempre true (anche con notFound)
- * @property {number}   processedAnnotations - Annotazioni aggiunte
- * @property {string[]} notFound             - Posizioni non trovate nel PDF
- * @property {string[]} unsupportedPatterns  - Pattern bis/ter trovati ma non linkati
+ * @property {boolean}     success              - Sempre true (anche con notFound)
+ * @property {number}      processedAnnotations - Annotazioni aggiunte
+ * @property {string[]}    notFound             - Posizioni non trovate nel PDF
+ * @property {string[]}    unsupportedPatterns  - Pattern bis/ter trovati ma non linkati
+ * @property {string|null} [warning]            - 'PDF_LOW_TEXT_DENSITY' se OCR sospetto
  */
 ```
 
@@ -73,9 +76,9 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 
 | File | Responsabilità |
 |------|----------------|
-| `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC, gestisce lifecycle app. **Nessuna logica PDF.** |
-| `preload.js` | Bridge sicuro. Espone `window.electronAPI` via `contextBridge`. Mai `ipcRenderer` diretto. |
-| `pdf-processor.js` | Tutta la logica PDF: estrae coordinate testo con mupdf (per-carattere), scrive annotazioni link con pdf-lib, orchestra il processo. **Nessun codice Electron.** |
+| `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC (`pdf:process`, `dialog:selectOutputFolder`, `read-pdf-as-base64`), gestisce lifecycle app. **Nessuna logica PDF.** |
+| `preload.cjs` | Bridge sicuro (CJS — Electron non supporta ESM nel preload). Espone `window.electronAPI` via `contextBridge`: `processPDF`, `selectOutputFolder`, `getPathForFile`, `readPdfAsBase64`. |
+| `pdf-processor.js` | Tutta la logica PDF: `checkPdfNativity` (verifica testo estraibile), `findTextCoordinates` (mupdf), `addUnderlineLink` (pdf-lib), `buildRenamedName` / `hasLeadingNumber` (rinomina allegati), `processPCTDocument` (orchestrazione). **Nessun codice Electron.** |
 
 ---
 
@@ -83,9 +86,9 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 
 | File | Responsabilità |
 |------|----------------|
-| `index.html` | Shell HTML. Step 1 (drop PDF atto), Step 2 (drop allegati, lista riordinabile), modale anteprima, area stato. |
-| `renderer.js` | Logica UI: navigazione step 1/2, drag & drop allegati con riordino, multi-selezione, modale preview, chiamate `window.electronAPI`. |
-| `style.css` | Stili vanilla: layout flexbox, step views, drag highlighting (`.drag-over`, `.dragging`), lista allegati scrollabile. |
+| `index.html` | Shell HTML. Step 1 (drop PDF atto + anteprima embed), Step 2 (drop allegati, lista riordinabile, input startIndex, select rinomina), toggle dark mode, modale anteprima, area stato. |
+| `renderer.js` | Logica UI: navigazione step 1/2, dark mode (`initTheme` + localStorage), anteprima PDF (`readPdfAsBase64`), `getStartIndex`, `hasLeadingNumber`, `buildRenamedName`, badge ⚠️, drag & drop riordino, multi-selezione, modale preview, chiamate `window.electronAPI`. |
+| `style.css` | Stili vanilla: variabili CSS con tema light/dark (`[data-theme="dark"]` + `prefers-color-scheme`), layout grid allegati, step views, drag highlighting, lista scrollabile. |
 
 ---
 
@@ -94,16 +97,26 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 ```
 UTENTE
   │
+  ├─ Avvio app
+  │     → initTheme(): legge localStorage → applica data-theme="dark"|"light"
+  │
   ├─ Step 1: Drag & drop PDF atto principale
   │     → renderer.js cattura evento drop
   │     → webUtils.getPathForFile(file) → percorso assoluto
-  │     → aggiorna UI, abilita pulsante "Avanti →"
+  │     → setMainPdf(): aggiorna UI, abilita "Avanti →"
+  │     → window.electronAPI.readPdfAsBase64(path)
+  │           → IPC: read-pdf-as-base64
+  │           → main.js: fs.readFile → buffer.slice(0, 500KB) → base64
+  │           → embed#pdf-preview-embed.src = "data:application/pdf;base64,..."
   │
   ├─ Step 2: Drag & drop allegati (ripetuto)
   │     → renderer.js cattura evento drop
   │     → webUtils.getPathForFile(file) → percorso assoluto
-  │     → aggiunge a lista con label = numero di posizione (1-based)
-  │     → UI: lista scrollabile con drag handle ⠿, numero posizione, ✕
+  │     → aggiunge a lista con label = getStartIndex() + idx
+  │     → renderAttachmentsList(): grid [drag][number][name][controls]
+  │         + badge ⚠️ se hasLeadingNumber(att.name) === false
+  │     → input #input-start-index: modifica numero partenza → ri-renderizza
+  │     → select #rename-scheme: schema rinomina (none|numbered|doc_|allegato_)
   │     → riordino via drag & drop HTML5 nativo → aggiorna posizioni
   │
   ├─ Click "Genera link"
@@ -118,17 +131,24 @@ UTENTE
         │     → restituisce percorso cartella
         │
         └─ window.electronAPI.processPDF({ mainPdfPath, attachments, outputFolder })
-              │  attachments[i].label = String(i + 1)  ← numero posizione
+              │  attachments[i].label    = String(getStartIndex() + i)
+              │  attachments[i].renamedAs = buildRenamedName(...) se schema ≠ none
               │
               → IPC: pdf:process
               │
               → main.js → pdf-processor.js
+                    │
+                    ├─ Verifica natività (mupdf)
+                    │     → conta totalChars su tutte le pagine
+                    │     → totalChars < 100 → throw errore bloccante
+                    │     → totalChars/pagine < 50 → nativityWarning = 'PDF_LOW_TEXT_DENSITY'
                     │
                     ├─ findUnsupportedBisPatterns(doc)
                     │     → scansiona PDF per pattern {prefisso}{N}bis/ter/quater
                     │     → restituisce string[] (segnalati in UI)
                     │
                     ├─ fs.copyFile: copia allegati in outputFolder
+                    │     → usa att.renamedAs come nome dest se presente
                     │
                     ├─ Per ogni allegato (label = "1", "2", "3"…):
                     │     buildSearchRegex(label)
@@ -150,13 +170,14 @@ UTENTE
                     │       → per ogni annotazione:
                     │           conversione Y: yPdfLib = pageHeight - y - height
                     │           drawLine (sottolineatura blu)
-                    │           aggiungi dict /Link con /Launch relativa
+                    │           aggiungi dict /Link con /Launch relativa (targetFile = destName)
                     │       → salva PDF modificato in outputFolder
                     │
-                    └─ restituisce { success, processedAnnotations, notFound, unsupportedPatterns }
+                    └─ restituisce { success, processedAnnotations, notFound, unsupportedPatterns, warning }
                           │
                     → IPC response → renderer.js
                     → UI: "Completato ✓" o avviso parziale
+                    → Se warning PDF_LOW_TEXT_DENSITY: avviso OCR non bloccante
                     → Se unsupportedPatterns: avviso giallo con lista pattern non linkati
 ```
 
