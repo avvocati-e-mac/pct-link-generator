@@ -40,55 +40,88 @@ export function buildSearchRegex(label) {
 
 // ===== Lettura coordinate testo =====
 
-// Opcode pdfjs (da OPS enum)
+// Opcode pdfjs per l'operator list
 const OPS_setFont       = 37;
 const OPS_setTextMatrix = 42;
 const OPS_moveText      = 40;
-const OPS_showText      = 44; // TJ / Tj con array glyph-width
+const OPS_showText      = 44;
 
 /**
- * Calcola x e width precisi di una sottostringa matched all'interno di un item
- * pdfjs usando i dati glyph-level dell'operator list.
+ * Scorre l'operator list di una pagina e costruisce una mappa
+ * posizione → {fontSize, glyphs} per ogni run di testo.
  *
- * @param {string}   str        - Testo completo dell'item
- * @param {RegExp}   regex      - Pattern da trovare
- * @param {number}   itemX      - X dell'item (da item.transform[4])
- * @param {number}   fontSize   - Dimensione font corrente
- * @param {Array}    glyphs     - Array di glyph dall'operatore showText
+ * La chiave è "x.x_y.y" (coordinate arrotondate a 1 decimale),
+ * che corrisponde univocamente a item.transform[4]_item.transform[5]
+ * di getTextContent().
+ *
+ * @param {{ fnArray: number[], argsArray: any[][] }} opList
+ * @returns {Map<string, {fontSize: number, glyphs: any[]}>}
+ */
+function buildPositionMap(opList) {
+  const map = new Map();
+  let curX = 0, curY = 0, curFontSize = 12;
+
+  for (let i = 0; i < opList.fnArray.length; i++) {
+    const fn   = opList.fnArray[i];
+    const args = opList.argsArray[i];
+
+    if (fn === OPS_setFont) {
+      if (args?.[1] != null) curFontSize = Math.abs(args[1]);
+    } else if (fn === OPS_setTextMatrix) {
+      // args: [a, b, c, d, e, f] — reset posizione assoluta
+      if (args) {
+        curX = args[4];
+        curY = args[5];
+        if (Math.abs(args[3]) > 0) curFontSize = Math.abs(args[3]);
+      }
+    } else if (fn === OPS_moveText) {
+      // args: [tx, ty] — spostamento relativo
+      if (args) { curX += args[0]; curY += args[1]; }
+    } else if (fn === OPS_showText) {
+      if (!args?.[0]) continue;
+      const glyphs = args[0];
+      const key = `${curX.toFixed(1)}_${curY.toFixed(1)}`;
+      map.set(key, { fontSize: curFontSize, glyphs });
+      // Avanza curX della larghezza del run appena emesso
+      for (const g of glyphs) {
+        if (typeof g === 'number') {
+          // Kern: valore negativo = avanzamento (unità 1/1000 font)
+          curX -= (g / 1000) * curFontSize;
+        } else if (g?.width != null) {
+          curX += (g.width / 1000) * curFontSize;
+        }
+      }
+    }
+  }
+  return map;
+}
+
+/**
+ * Calcola x e width precisi di una sottostringa matched usando i glyph width
+ * dell'operator list (1/1000 di unità font per carattere).
+ *
+ * @param {string}  str       - Testo completo dell'item
+ * @param {RegExp}  regex     - Pattern da trovare
+ * @param {number}  itemX     - X baseline dell'item
+ * @param {number}  fontSize  - Dimensione font effettiva dal run
+ * @param {any[]}   glyphs    - Array di glyph dall'operatore showText
  * @returns {{ x: number, width: number } | null}
  */
-function computeMatchBounds(str, regex, itemX, fontSize, glyphs) {
+function computeMatchBoundsFromGlyphs(str, regex, itemX, fontSize, glyphs) {
   const match = regex.exec(str);
   if (!match) return null;
 
   const matchStart = match.index;
   const matchEnd   = matchStart + match[0].length;
 
-  // I glyph possono essere misti: { unicode, width } o numeri (kern, negativo = avanzamento)
-  // Ricostruiamo il mapping carattere → width accumulando i glyph reali
-  let charWidths = [];
-  for (const g of glyphs) {
-    if (typeof g === 'number') {
-      // kern: aggiusta l'ultimo carattere già emesso (non aggiunge caratteri)
-      // pdfjs lo esprime in 1/1000 di unità — lo ignoriamo per semplicità
-      continue;
-    }
-    if (g && typeof g.width === 'number') {
-      // width è in 1/1000 di unità font → converti in pt
-      charWidths.push((g.width / 1000) * fontSize);
-    }
-  }
+  // Filtra solo glyph reali (scarta kern numerici)
+  const chars = glyphs.filter(g => g && g.unicode != null);
 
-  // Se il numero di glyph non corrisponde al numero di caratteri (PDF complessi,
-  // ligature, glyph compositi), fallback alla larghezza proporzionale sull'item
-  if (charWidths.length !== str.length) {
-    const totalItemWidth = charWidths.reduce((a, b) => a + b, 0) || 0;
-    if (totalItemWidth <= 0) return null;
-    // Usa proporzione basata sulla lunghezza in caratteri come approssimazione
-    const avgW = totalItemWidth / charWidths.length;
-    charWidths = Array(str.length).fill(avgW);
-  }
+  // Se il numero di glyph non corrisponde ai caratteri (ligature, PDF complessi)
+  // non possiamo fare il mapping 1:1 → restituisce null per attivare il fallback
+  if (chars.length !== str.length) return null;
 
+  const charWidths = chars.map(g => (g.width / 1000) * fontSize);
   const xOffset    = charWidths.slice(0, matchStart).reduce((a, b) => a + b, 0);
   const matchWidth = charWidths.slice(matchStart, matchEnd).reduce((a, b) => a + b, 0);
 
@@ -96,9 +129,32 @@ function computeMatchBounds(str, regex, itemX, fontSize, glyphs) {
 }
 
 /**
+ * Fallback: calcola x e width per proporzione uniforme di caratteri.
+ * Accurato per righe corte o match all'inizio; meno preciso per match
+ * a metà di righe lunghe con font proporzionale.
+ *
+ * @param {string}  str    - Testo completo dell'item
+ * @param {RegExp}  regex  - Pattern da trovare
+ * @param {number}  itemX  - X baseline dell'item
+ * @param {number}  itemW  - Larghezza totale dell'item in pt
+ * @returns {{ x: number, width: number } | null}
+ */
+function computeMatchBoundsProportional(str, regex, itemX, itemW) {
+  const match = regex.exec(str);
+  if (!match || str.length === 0 || itemW <= 0) return null;
+
+  const avgCharW   = itemW / str.length;
+  const xOffset    = match.index * avgCharW;
+  const matchWidth = match[0].length * avgCharW;
+
+  return { x: itemX + xOffset, width: matchWidth };
+}
+
+/**
  * Trova le coordinate di tutti i match di un'etichetta nel PDF.
  * Usa pdfjs-dist in modalità Node.js (no worker, build legacy).
- * Le coordinate X sono calcolate a livello di glyph per precisione sub-parola.
+ * Le coordinate X/width sono calcolate con glyph-level widths dall'operator list,
+ * abbinati agli item di getTextContent() per posizione X+Y (abbinamento univoco).
  *
  * @param {string} pdfPath - Percorso assoluto al PDF
  * @param {string} searchLabel - Etichetta da cercare (es. "doc. 1")
@@ -128,97 +184,40 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
   for (let pageIndex = 0; pageIndex < pdfDocument.numPages; pageIndex++) {
     const page = await pdfDocument.getPage(pageIndex + 1); // pdfjs è 1-based
 
-    // Recupera sia il testo strutturato sia la lista operatori (con glyph widths)
     const [textContent, opList] = await Promise.all([
       page.getTextContent(),
       page.getOperatorList(),
     ]);
 
-    // Costruiamo una mappa: (str, xBaseline) → glyph array dall'operator list
-    // Scorriamo gli operatori una volta, costruendo una sequenza di "run di testo"
-    // che poi abbiniamo agli item di getTextContent() per str+x.
-    /** @type {Array<{str: string, x: number, fontSize: number, glyphs: Array}>} */
-    const textRuns = [];
-    let curFontSize = 12;
-
-    for (let i = 0; i < opList.fnArray.length; i++) {
-      const fn   = opList.fnArray[i];
-      const args = opList.argsArray[i];
-
-      if (fn === OPS_setFont) {
-        // args: [fontName, size]
-        if (args && args[1] != null) curFontSize = Math.abs(args[1]);
-      } else if (fn === OPS_setTextMatrix) {
-        // args: [a, b, c, d, e, f] — la matrice Tm include scala e traslazione
-        // Il font size effettivo viene dal prodotto |d|*size o |a|*size a seconda
-        // dell'orientamento, ma per testo orizzontale standard |a| = |d| = fontSize.
-        if (args && args[3] != null) {
-          const scaleFromMatrix = Math.abs(args[3]);
-          if (scaleFromMatrix > 0) curFontSize = scaleFromMatrix;
-        }
-      } else if (fn === OPS_showText) {
-        // args[0] è l'array di glyph: [ {unicode, width}, kern_num, ... ]
-        if (!args || !args[0]) continue;
-        const glyphs = args[0];
-        // Ricostruisce la stringa dai glyph (stessa logica di pdfjs internamente)
-        let runStr = '';
-        for (const g of glyphs) {
-          if (g && g.unicode != null) runStr += g.unicode;
-        }
-        if (runStr === '') continue;
-        // Cerca l'item corrispondente per stringa tra quelli di getTextContent
-        // (l'abbinamento avviene su str perché le coordinate potrebbero differire
-        //  leggermente dopo trasformazioni CTM)
-        textRuns.push({ str: runStr, fontSize: curFontSize, glyphs });
-      }
-    }
-
-    // Indice corrente nella sequenza di textRuns per l'abbinamento con items
-    let runIdx = 0;
+    // Mappa posizione → run glyph (abbinamento per X+Y univoco)
+    const positionMap = buildPositionMap(opList);
 
     for (const item of textContent.items) {
       if (!item.str || item.str.trim() === '') continue;
       if (!regex.test(item.str)) continue;
 
-      const itemX    = item.transform[4];
-      const itemY    = item.transform[5];
-      const itemH    = item.height > 0 ? item.height : Math.abs(item.transform[3]);
+      const itemX = item.transform[4];
+      const itemY = item.transform[5];
+      const itemH = item.height > 0 ? item.height : Math.abs(item.transform[3]);
 
-      // Cerca il textRun corrispondente a questo item
-      // Strategia: scorre i run dal punto corrente cercando quello che contiene item.str
-      let matchedRun = null;
-      for (let r = runIdx; r < textRuns.length; r++) {
-        if (textRuns[r].str === item.str) {
-          matchedRun = textRuns[r];
-          runIdx = r + 1; // avanza l'indice per i prossimi item
-          break;
-        }
+      // Cerca il run corrispondente per posizione X+Y
+      const key = `${itemX.toFixed(1)}_${itemY.toFixed(1)}`;
+      const run = positionMap.get(key);
+
+      let bounds = null;
+      if (run) {
+        bounds = computeMatchBoundsFromGlyphs(item.str, regex, itemX, run.fontSize, run.glyphs);
+      }
+      // Fallback proporzionale se run non trovato o glyph non allineati 1:1
+      if (!bounds) {
+        bounds = computeMatchBoundsProportional(item.str, regex, itemX, item.width);
       }
 
-      if (matchedRun) {
-        // Calcola coordinate precise con glyph widths
-        const bounds = computeMatchBounds(
-          item.str, regex, itemX, matchedRun.fontSize, matchedRun.glyphs
-        );
-        if (bounds) {
-          results.push({
-            pageIndex,
-            x: bounds.x,
-            y: itemY,
-            width: bounds.width,
-            height: itemH,
-            matchedText: item.str,
-          });
-          continue;
-        }
-      }
-
-      // Fallback: usa le coordinate dell'intero item (comportamento precedente)
       results.push({
-        pageIndex,
-        x: itemX,
-        y: itemY,
-        width: item.width,
+        pageIndex, // 0-based, coerente con pdf-lib
+        x:      bounds?.x     ?? itemX,
+        y:      itemY,
+        width:  bounds?.width ?? item.width,
         height: itemH,
         matchedText: item.str,
       });
