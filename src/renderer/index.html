@@ -44,7 +44,7 @@
       <!-- Colonna 2: Allegati -->
       <section class="column" id="section-attachments">
         <h2>Allegati</h2>
-        <p class="column-desc">Trascina qui i file allegati (PDF, EML, MSG, JPG) — più sessioni supportate</p>
+        <p class="column-desc">Trascina qui i file allegati — formati PCT 2024 supportati (PDF, RTF, immagini, video, audio, testo, email, zip) — più sessioni supportate</p>
 
         <div class="drop-zone" id="drop-zone-attachments" role="button" tabindex="0"
              aria-label="Zona drop per gli allegati">
@@ -53,7 +53,8 @@
             <span class="drop-text">Trascina allegati qui<br />o clicca per selezionare</span>
           </div>
           <input type="file" id="input-attachments"
-                 accept=".pdf,.eml,.msg,.jpg,.jpeg" multiple hidden />
+                 accept=".pdf,.rtf,.jpg,.jpeg,.tif,.tiff,.gif,.dcm,.mp4,.m4v,.mov,.mpg,.mpeg,.avi,.mp3,.flac,.raw,.wav,.aiff,.aif,.txt,.xml,.html,.htm,.eml,.msg,.zip,.rar,.arj"
+                 multiple hidden />
         </div>
 
         <ul class="attachments-list" id="attachments-list" aria-label="Lista allegati"></ul>
