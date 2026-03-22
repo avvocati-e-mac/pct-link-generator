@@ -14,22 +14,78 @@ import mupdf from 'mupdf';
 // ===== Funzione di matching flessibile =====
 
 /**
+ * Gruppi di sinonimi per i prefissi di etichetta negli atti PCT italiani.
+ * Se il primo token della label appartiene a un gruppo, la regex espande
+ * il match a tutte le varianti del gruppo (incluse abbreviazioni con punto opzionale).
+ *
+ * @type {string[][]}
+ */
+export const LABEL_SYNONYM_GROUPS = [
+  ['doc', 'documento', 'all', 'allegato', 'att', 'attaccato', 'ex'],
+];
+
+/**
  * Crea una RegExp flessibile per trovare un'etichetta nel testo del PDF.
  * Normalizza: "doc. 1" trova "Doc.1", "doc 1", "DOC. 1", "Doc. 1", ecc.
+ * Espande il prefisso con sinonimi PCT: "doc. 1" trova anche "documento 1",
+ * "Allegato 1", "all. 1", ecc.
  *
  * @param {string} label - Es. "doc. 1", "allegato 2"
  * @returns {RegExp}
  */
 export function buildSearchRegex(label) {
-  // Strategia: splitta la label in token alfanumerici, poi li unisce con [\s.]*
-  // "doc. 1" → tokens ["doc", "1"] → /doc[\s.]*1\b/i
-  // Il \b finale evita falsi positivi: "doc. 1" non trova "doc. 11"
+  // Strategia:
+  // 1. Estrai token alfanumerici dalla label
+  // 2. Se il primo token è in un gruppo sinonimi, sostituiscilo con
+  //    un'alternanza regex che copre tutti i sinonimi del gruppo
+  //    (abbreviazioni: punto opzionale es. doc\.?)
+  // 3. Unisci i token con [\s.]* e aggiungi lookahead negativo finale
   const normalized = label.trim();
   const tokens = normalized.match(/[a-zA-ZàèéìòùÀÈÉÌÒÙ]+|\d+/g) || [];
-  const pattern = tokens
-    .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-    .join('[\\s.]*');
-  return new RegExp(pattern + '\\b', 'i');
+  if (tokens.length === 0) {
+    return new RegExp('(?!)', 'i'); // regex che non fa mai match
+  }
+
+  /**
+   * Trova il gruppo sinonimi a cui appartiene un token (case-insensitive).
+   * @param {string} token
+   * @returns {string[] | null}
+   */
+  function findSynonymGroup(token) {
+    const lower = token.toLowerCase();
+    for (const group of LABEL_SYNONYM_GROUPS) {
+      if (group.includes(lower)) return group;
+    }
+    return null;
+  }
+
+  /**
+   * Trasforma un sinonimo in un pattern regex.
+   * Le abbreviazioni brevi (≤ 4 char) ottengono il punto opzionale: doc → doc\.?
+   * Le parole lunghe non hanno punto opzionale: documento → documento
+   * @param {string} syn
+   * @returns {string}
+   */
+  function synonymToPattern(syn) {
+    const escaped = syn.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return syn.length <= 4 ? escaped + '\\.?' : escaped;
+  }
+
+  const patternParts = tokens.map((t, i) => {
+    const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (i === 0) {
+      const group = findSynonymGroup(t);
+      if (group) {
+        const alternatives = group.map(synonymToPattern).join('|');
+        return `(?:${alternatives})`;
+      }
+    }
+    return escaped;
+  });
+
+  const pattern = patternParts.join('[\\s.]*');
+  // Lookahead negativo: evita falsi positivi "doc. 1" → "doc. 11" o "doc. 1a"
+  return new RegExp(pattern + '(?![a-zA-Z0-9])', 'i');
 }
 
 // ===== Lettura coordinate testo =====

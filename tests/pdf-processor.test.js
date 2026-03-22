@@ -15,6 +15,7 @@ import {
   findTextCoordinates,
   addUnderlineLink,
   processPCTDocument,
+  LABEL_SYNONYM_GROUPS,
 } from '../src/main/pdf-processor.js';
 
 // ===== Utilità per test =====
@@ -93,9 +94,13 @@ describe('buildSearchRegex — matching flessibile', () => {
     { label: 'doc. 1', input: 'Doc. 1', shouldMatch: true },
     { label: 'doc. 1', input: 'doc. 2', shouldMatch: false },
     { label: 'doc. 1', input: 'doc. 11', shouldMatch: false },
+    { label: 'doc. 1', input: 'doc. 12', shouldMatch: false },
+    { label: 'doc. 1', input: 'doc. 1a', shouldMatch: false },
     { label: 'allegato 2', input: 'Allegato 2', shouldMatch: true },
     { label: 'allegato 2', input: 'allegato2', shouldMatch: true },
     { label: 'allegato 2', input: 'allegato 3', shouldMatch: false },
+    { label: 'allegato A', input: 'Allegato A', shouldMatch: true },
+    { label: 'allegato A', input: 'allegato AB', shouldMatch: false },
   ];
 
   for (const { label, input, shouldMatch } of cases) {
@@ -104,6 +109,52 @@ describe('buildSearchRegex — matching flessibile', () => {
       expect(regex.test(input)).toBe(shouldMatch);
     });
   }
+});
+
+// ===== Test 2b: buildSearchRegex con sinonimi PCT =====
+
+describe('buildSearchRegex — sinonimi italiani PCT', () => {
+  const synonymCases = [
+    // "doc. 1" espande a tutti i sinonimi del gruppo
+    { label: 'doc. 1', input: 'Doc.1', shouldMatch: true },
+    { label: 'doc. 1', input: 'documento 1', shouldMatch: true },
+    { label: 'doc. 1', input: 'Allegato 1', shouldMatch: true },
+    { label: 'doc. 1', input: 'all. 1', shouldMatch: true },
+    { label: 'doc. 1', input: 'att. 1', shouldMatch: true },
+    { label: 'doc. 1', input: 'ex 1', shouldMatch: true },
+    // Falsi positivi — NON devono fare match
+    { label: 'doc. 1', input: 'doc. 12', shouldMatch: false },
+    { label: 'doc. 1', input: 'documento 11', shouldMatch: false },
+    { label: 'doc. 1', input: 'doc. 1a', shouldMatch: false },
+    // "allegato A" espande a tutti i sinonimi del gruppo
+    { label: 'allegato A', input: 'Allegato A', shouldMatch: true },
+    { label: 'allegato A', input: 'doc. A', shouldMatch: true },
+    { label: 'allegato A', input: 'All. A', shouldMatch: true },
+    // Falsi positivi per lettera
+    { label: 'allegato A', input: 'Allegato AB', shouldMatch: false },
+    { label: 'allegato A', input: 'allegato A1', shouldMatch: false },
+    // Token non nel gruppo sinonimi — solo match esatto
+    { label: 'paragrafo 3', input: 'paragrafo 3', shouldMatch: true },
+    { label: 'paragrafo 3', input: 'doc. 3', shouldMatch: false },
+    { label: 'paragrafo 3', input: 'allegato 3', shouldMatch: false },
+    { label: 'paragrafo 3', input: 'paragrafo 33', shouldMatch: false },
+  ];
+
+  for (const { label, input, shouldMatch } of synonymCases) {
+    it(`sinonimi: "${label}" ${shouldMatch ? 'trova' : 'NON trova'} "${input}"`, () => {
+      const regex = buildSearchRegex(label);
+      expect(regex.test(input)).toBe(shouldMatch);
+    });
+  }
+
+  it('LABEL_SYNONYM_GROUPS è un array non vuoto esportato', () => {
+    expect(Array.isArray(LABEL_SYNONYM_GROUPS)).toBe(true);
+    expect(LABEL_SYNONYM_GROUPS.length).toBeGreaterThan(0);
+    // Il primo gruppo deve contenere "doc" e "allegato"
+    const firstGroup = LABEL_SYNONYM_GROUPS[0];
+    expect(firstGroup).toContain('doc');
+    expect(firstGroup).toContain('allegato');
+  });
 });
 
 // ===== Test 3: findTextCoordinates con PDF reale =====
