@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { processPCTDocument } from './pdf-processor.js';
+import { IPC_CHANNELS } from '../shared/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,7 +46,7 @@ function registerIpcHandlers() {
    * Apre il dialogo di selezione cartella di output.
    * @returns {Promise<string|null>} Percorso della cartella scelta, o null se annullato.
    */
-  ipcMain.handle('dialog:selectOutputFolder', async () => {
+  ipcMain.handle(IPC_CHANNELS.DIALOG_SELECT_FOLDER, async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
       properties: ['openDirectory', 'createDirectory'],
       title: 'Seleziona cartella di output',
@@ -64,7 +65,7 @@ function registerIpcHandlers() {
    * @param {{ mainPdfPath: string, attachments: Array<{path: string, name: string, label: string}>, outputFolder: string }} data
    * @returns {Promise<{ success: boolean, processedAnnotations: number, notFound: string[] }>}
    */
-  ipcMain.handle('pdf:process', async (_event, data) => {
+  ipcMain.handle(IPC_CHANNELS.PDF_PROCESS, async (_event, data) => {
     const { mainPdfPath, attachments, outputFolder } = data;
     console.log(
       `[IPC] pdf:process avviato: ${path.basename(mainPdfPath)}, ` +

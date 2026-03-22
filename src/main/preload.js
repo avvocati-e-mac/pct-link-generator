@@ -1,4 +1,5 @@
 import { contextBridge, ipcRenderer, webUtils } from 'electron';
+import { IPC_CHANNELS } from '../shared/types.js';
 
 /**
  * Espone un'API minimale e sicura al Renderer tramite contextBridge.
@@ -13,14 +14,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @param {{ mainPdfPath: string, attachments: Array<{path: string, name: string, label: string}>, outputFolder: string }} data
    * @returns {Promise<{ success: boolean, processedAnnotations: number, notFound: string[] }>}
    */
-  processPDF: (data) => ipcRenderer.invoke('pdf:process', data),
+  processPDF: (data) => ipcRenderer.invoke(IPC_CHANNELS.PDF_PROCESS, data),
 
   /**
    * Apre il dialogo di selezione cartella di output.
    *
    * @returns {Promise<string|null>} Percorso scelto o null se annullato.
    */
-  selectOutputFolder: () => ipcRenderer.invoke('dialog:selectOutputFolder'),
+  selectOutputFolder: () => ipcRenderer.invoke(IPC_CHANNELS.DIALOG_SELECT_FOLDER),
 
   /**
    * Restituisce il percorso assoluto di un File object droppato nel renderer.

@@ -118,6 +118,26 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## Sessione allineamento CLAUDE.md (2026-03-22)
+
+### Cosa ho fatto
+- Analizzato 20 discrepanze tra CLAUDE.md (descritto stack React/electron-vite)
+  e progetto reale (Electron puro + Vanilla JS)
+- Riscritto CLAUDE.md per descrivere il progetto come realmente implementato
+- Creato `src/shared/types.js` con costanti IPC (`IPC_CHANNELS`) e @typedef JSDoc
+- Aggiornato `main.js` e `preload.js` per importare e usare `IPC_CHANNELS`
+
+### Decisioni prese
+- File di sessione rimangono nella root accanto a DEVLOG.md (non in sottocartella)
+- `sandbox: false` documentato in CLAUDE.md con motivazione (webUtils requirement)
+- Zod non aggiunto: progetto offline, validazione non critica per ora
+- Struttura preload rimasta in `src/main/preload.js` (non spostata in `src/preload/`)
+
+### Problemi aperti
+- Nessuno — 16 test verdi, struttura allineata
+
+---
+
 ## Commit 8 — test: pdf-processor unit tests
 
 **16 test tutti verdi.**
