@@ -25,22 +25,23 @@ export const LABEL_SYNONYM_GROUPS = [
 ];
 
 /**
- * Pattern stringa per il prefisso opzionale (doc./allegato/ecc. + n. opzionale).
+ * Pattern stringa per il prefisso OBBLIGATORIO (doc./allegato/ecc. + n. opzionale).
  * Usato nel Caso A di buildSearchRegex (label solo numero).
+ * Il prefisso è obbligatorio per evitare falsi match su numeri isolati (importi, date, P.IVA).
  * Esportata per i test.
  * @type {string}
  */
 export const SYNONYMS_PREFIX_PATTERN =
-  '(?:(?:doc\\.?|documento|all\\.?|allegato|att\\.?|attaccato|ex)\\s+(?:n\\.?\\s*)?)?';
+  '(?:doc\\.?|documento|all\\.?|allegato|att\\.?|attaccato|ex)\\s+(?:n\\.?\\s*)?';
 
 /**
  * Crea una RegExp flessibile per trovare un'etichetta nel testo del PDF.
  *
  * **Caso A — label è solo un numero (es. "1", "11", "100"):**
- * Costruisce una regex con prefisso opzionale completo:
- *   (?:(?:doc.?|documento|all.?|allegato|att.?|attaccato|ex)\s+(?:n.?\s*)?)?NUMERO(?![a-zA-Z0-9])
- * Il prefisso è opzionale → fa match sia su "1" standalone sia su "allegato 1",
- * "doc. 1", "allegato n. 1", "Documento n. 1", "all. 1" ecc.
+ * Costruisce una regex con prefisso OBBLIGATORIO:
+ *   (?:doc.?|documento|all.?|allegato|att.?|attaccato|ex)\s+(?:n.?\s*)?NUMERO(?![a-zA-Z0-9])
+ * Il prefisso è obbligatorio → evita falsi match su numeri isolati (importi, date, P.IVA).
+ * Fa match su "allegato 1", "doc. 1", "allegato n. 1", "Documento n. 1", "all. 1" ecc.
  * Lookahead negativo → "1" non fa match su "11", "1a", "1bis" (senza spazio).
  *
  * **Caso B — label contiene un prefisso (es. "doc. 1", "allegato A"):**
@@ -55,6 +56,7 @@ export function buildSearchRegex(label) {
   // Caso A: label è solo un numero (posizione 1-based)
   if (/^\d+$/.test(normalized)) {
     const numEscaped = normalized.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // Prefisso OBBLIGATORIO: evita match su numeri isolati (importi, P.IVA, date).
     // (?<!\d) = lookbehind negativo: il numero non può essere preceduto da un'altra cifra.
     // Questo evita che label "1" faccia match su "11" o "111":
     //   "doc. 11" → la "1" è preceduta da "1" → no match ✓

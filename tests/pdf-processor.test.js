@@ -169,7 +169,6 @@ describe('buildSearchRegex — label solo numero (posizione)', () => {
     { label: '1',   input: 'Documento n. 1',      desc: 'Documento n. 1' },
     { label: '1',   input: 'all. 1',              desc: 'all. 1' },
     { label: '1',   input: 'att. 1',              desc: 'att. 1' },
-    { label: '1',   input: '1',                   desc: '1 standalone' },
     { label: '1',   input: 'allegato 1 bis',      desc: 'allegato 1 bis (spazio prima di bis)' },
     { label: '1',   input: 'doc. 1 ter',          desc: 'doc. 1 ter (spazio prima di ter)' },
     { label: '11',  input: 'allegato n. 11',      desc: 'allegato n. 11' },
@@ -187,6 +186,12 @@ describe('buildSearchRegex — label solo numero (posizione)', () => {
 
   // NON deve fare match
   const noMatchCases = [
+    // Prefisso obbligatorio: numeri isolati NON devono fare match
+    { label: '1',   input: '1',                   desc: '1 standalone (senza prefisso)' },
+    { label: '1',   input: '250.000,00',           desc: 'importo monetario' },
+    { label: '1',   input: '09876543210',          desc: 'P.IVA' },
+    { label: '1',   input: '10 settembre 2025',    desc: 'data (10 non deve matchare come "1")' },
+    // Falsi positivi numerici
     { label: '1',   input: 'doc. 11',            desc: 'doc. 11 (falso positivo)' },
     { label: '1',   input: 'allegato 12',         desc: 'allegato 12 (falso positivo)' },
     { label: '1',   input: '1a',                  desc: '1a (lettera attaccata)' },
