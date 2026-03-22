@@ -160,7 +160,7 @@ export async function addUnderlineLink(pdfPath, outputPath, annotations) {
   await fs.promises.writeFile(outputPath, savedBytes);
 }
 
-// ===== Funzione orchestratrice =====
+// ===== Commit 7: Funzione orchestratrice =====
 
 /**
  * @typedef {Object} ProcessInput
