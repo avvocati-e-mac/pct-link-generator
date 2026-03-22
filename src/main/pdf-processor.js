@@ -474,7 +474,7 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
   for (const att of attachments) {
     const matches = await findTextCoordinates(mainPdfPath, att.label);
     if (matches.length === 0) {
-      notFound.push(att.label);
+      notFound.push(`${att.label} — ${att.name}`);
       console.log(`[PDF] Etichetta non trovata: "${att.label}"`);
     } else {
       const destName = att.renamedAs || att.name;

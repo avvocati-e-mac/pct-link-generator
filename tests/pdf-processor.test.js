@@ -268,7 +268,7 @@ describe('processPCTDocument — caso notFound', () => {
     });
 
     expect(result.success).toBe(true);
-    expect(result.notFound).toContain('ZZZNONTROVATO999');
+    expect(result.notFound[0]).toMatch(/ZZZNONTROVATO999/);
     expect(result.processedAnnotations).toBe(0);
   });
 });
