@@ -30,7 +30,7 @@ Prima di iniziare qualsiasi lavoro, leggi il file di sessione più recente nella
 (es. `sessione_002_fase2.md`) per capire lo stato del progetto, le decisioni prese,
 cosa manca.
 
-I file di sessione stanno nella root del progetto, accanto a `DEVLOG.md`.
+I file di sessione stanno nella cartella `sessioni/`.
 
 Dopo ogni blocco di lavoro significativo, crea o aggiorna il file di sessione.
 
@@ -412,8 +412,9 @@ const result = await window.electronAPI.processPDF(data); // ✅
 ├── CLAUDE.md
 ├── ARCHITECTURE.md
 ├── DEVLOG.md
-├── sessione_001_fase1.md       ← file sessione (nella root, accanto a DEVLOG.md)
-├── sessione_NNN_faseN.md       ← pattern per sessioni future
+├── sessioni/
+│   ├── sessione_001_fase1.md
+│   └── sessione_NNN_faseN.md   ← pattern per sessioni future
 ├── package.json
 ├── vitest.config.js
 ├── src/
