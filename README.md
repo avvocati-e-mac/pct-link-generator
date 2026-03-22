@@ -12,6 +12,19 @@ App desktop Electron per aggiungere annotazioni link cliccabili ai PDF degli att
 
 **Uso tipico:** avvocati e professionisti che depositano atti telematici del Processo Civile Telematico (PCT).
 
+## Download
+
+Scarica l'ultima versione dalla pagina [**Releases**](https://github.com/avvocati-e-mac/pct-link-generator/releases/latest):
+
+| Sistema operativo | File da scaricare |
+|---|---|
+| **macOS — Apple Silicon** (M1/M2/M3/M4) | `PCT-Link-Generator-*-arm64.dmg` |
+| **macOS — Intel** (x64) | `PCT-Link-Generator-*-x64.dmg` |
+| **Windows** (x64) | `PCT-Link-Generator-*-x64.exe` |
+| **Linux** (x64) | `PCT-Link-Generator-*-x86_64.AppImage` |
+
+> **Non sai quale Mac hai?** Vai su  → "Informazioni su questo Mac". Se vedi "Apple M…" scarica la versione ARM64, altrimenti Intel.
+
 ## Privacy
 
 Zero connessioni di rete. Tutto elaborato offline. GDPR compliant.
@@ -53,7 +66,7 @@ npm start
 npm test
 ```
 
-65 test Vitest, tutti verdi.
+65 test Vitest, tutti verdi (v0.2.0).
 
 ## Stack
 
