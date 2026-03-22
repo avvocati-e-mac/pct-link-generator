@@ -294,3 +294,46 @@ con `workerSrc = ''` — richiede il path del worker come `file://` URL. Usato
 - Nessun test per la logica UI del renderer (test solo su pdf-processor)
 - Electron Builder non ancora configurato (Fase 6 roadmap)
 - La build CI su GitHub Actions non è stata aggiornata per questa sessione
+
+---
+
+## Sessione 007 — Fix Regressione Regex + UX (2026-03-22)
+
+### Cosa ho fatto
+
+**Fix 1 — Prefisso obbligatorio in buildSearchRegex (CRITICO):**
+- `SYNONYMS_PREFIX_PATTERN` era opzionale (`?` finale) → `buildSearchRegex("1")` faceva match su qualsiasi `"1"` isolata nel PDF (importi, P.IVA, date).
+- Rimosso il `?` finale: il prefisso sinonimo è ora **obbligatorio** per le label numeriche.
+- Aggiornati i test: rimosso il caso `'1 standalone' → true`, aggiunti 3 casi di non-match (`250.000,00`, P.IVA, data).
+- 65 test verdi.
+
+**Fix 2 — Modale preview sincronizzata con ordine allegati:**
+- Analizzato il codice: `openPreviewModal` legge `attachments.forEach` al momento della chiamata → non c'è un bug strutturale.
+- Il drop handler usa `attachments.splice()` (mutazione in-place) → l'array module-level è aggiornato correttamente.
+- Aggiunto `console.log('[DRAG] Nuovo ordine:', ...)` nel drop handler per facilitare debug futuro.
+
+**Fix 3 — Nomi allegati non più troncati a 120px:**
+- `.attachment-item .att-name`: rimosso `flex: 0 0 auto` e `max-width: 120px`.
+- Sostituito con `flex: 1; min-width: 0` → il nome ora occupa lo spazio disponibile e viene troncato con ellipsis solo se necessario.
+
+**Fix 4 — Animazione drag visibile:**
+- Aggiunta `transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.12s` a `.attachment-item`.
+- Aggiunta nuova regola `.attachment-item.dragging` con opacity 0.4, bordo tratteggiato blu, scale(0.98).
+
+### Decisioni prese
+
+1. **Prefisso obbligatorio (non opzionale):** cambio breaking intenzionale per utenti che usano label numeriche (es. "1", "2", "10"). Il rischio di falsi positivi su documenti legali con molti numeri (importi, date, P.IVA) è inaccettabile.
+2. **Nessun bug strutturale nel Fix 2:** il codice era già corretto. Il console.log è un'aggiunta difensiva per debug futuro.
+
+### File modificati
+
+- `src/main/pdf-processor.js`
+- `tests/pdf-processor.test.js`
+- `src/renderer/renderer.js`
+- `src/renderer/style.css`
+
+### Problemi noti / TODO prossima sessione
+
+- pdfjs-dist ancora in package.json — può essere rimosso
+- Nessun test per la logica UI del renderer (test solo su pdf-processor)
+- Electron Builder non ancora configurato (Fase 6 roadmap)
