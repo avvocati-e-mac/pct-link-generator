@@ -92,7 +92,7 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
   return results;
 }
 
-// ===== Scrittura annotazioni link =====
+// ===== Commit 6: Scrittura annotazioni link =====
 
 /**
  * @typedef {Object} Annotation
