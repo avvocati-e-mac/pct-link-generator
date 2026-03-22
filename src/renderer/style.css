@@ -162,6 +162,22 @@ main {
   white-space: nowrap;
 }
 
+/* ===== Numero partenza allegati ===== */
+.start-index-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+}
+
+.start-index-input {
+  width: 72px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+}
+
 /* ===== Lista allegati ===== */
 .attachments-list {
   list-style: none;

@@ -65,6 +65,8 @@ const btnBack             = document.getElementById('btn-back');
 const bulkRemoveRow       = document.getElementById('bulk-remove-row');
 const btnRemoveSelected   = document.getElementById('btn-remove-selected');
 
+const inputStartIndex     = document.getElementById('input-start-index');
+
 const statusArea          = document.getElementById('status-area');
 const statusMessage       = document.getElementById('status-message');
 const notFoundList        = document.getElementById('not-found-list');
@@ -74,6 +76,21 @@ const previewMainPdf      = document.getElementById('preview-main-pdf');
 const previewTbody        = document.getElementById('preview-tbody');
 const btnModalCancel      = document.getElementById('btn-modal-cancel');
 const btnModalConfirm     = document.getElementById('btn-modal-confirm');
+
+// ===== Numero di partenza allegati =====
+
+/**
+ * Restituisce il numero di partenza per la numerazione degli allegati.
+ * Legge l'input utente; se vuoto o < 1, ritorna 1.
+ *
+ * @returns {number}
+ */
+function getStartIndex() {
+  const val = parseInt(inputStartIndex.value, 10);
+  return (Number.isFinite(val) && val >= 1) ? val : 1;
+}
+
+inputStartIndex.addEventListener('input', () => renderAttachmentsList());
 
 // ===== Navigazione Step 1 ↔ Step 2 =====
 
@@ -359,7 +376,7 @@ function renderAttachmentsList() {
 
     li.innerHTML = `
       <span class="drag-handle" draggable="true" aria-label="Trascina per riordinare">⠿</span>
-      <span class="att-number">${idx + 1}</span>
+      <span class="att-number">${getStartIndex() + idx}</span>
       <span class="att-name" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</span>
       <div class="attachment-controls">
         <button class="btn-remove btn-del" aria-label="Rimuovi allegato">✕</button>
@@ -414,9 +431,9 @@ function openPreviewModal() {
   attachments.forEach((att, idx) => {
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td>${idx + 1}</td>
+      <td>${getStartIndex() + idx}</td>
       <td title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</td>
-      <td>${idx + 1}</td>
+      <td>${getStartIndex() + idx}</td>
     `;
     previewTbody.appendChild(tr);
   });
@@ -448,11 +465,11 @@ async function runGeneration() {
   try {
     const result = await window.electronAPI.processPDF({
       mainPdfPath,
-      // La label è la posizione 1-based come stringa
+      // La label è la posizione a partire da startIndex, come stringa
       attachments: attachments.map((att, idx) => ({
         path:  att.path,
         name:  att.name,
-        label: String(idx + 1),
+        label: String(getStartIndex() + idx),
       })),
       outputFolder,
     });
