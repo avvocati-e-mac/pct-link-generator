@@ -337,3 +337,57 @@ con `workerSrc = ''` — richiede il path del worker come `file://` URL. Usato
 - pdfjs-dist ancora in package.json — può essere rimosso
 - Nessun test per la logica UI del renderer (test solo su pdf-processor)
 - Electron Builder non ancora configurato (Fase 6 roadmap)
+
+---
+
+## Sessione 008 — Feature UX avanzate (2026-03-22)
+
+### Cosa ho fatto
+
+**Commit 2.1 — att-number a sinistra (grid layout):**
+- Classe `att-label` → `att-number`. `.attachment-item` usa `display: grid` con `[drag] 24px [number] 36px [name] 1fr [controls] auto`.
+- `.att-number` in azzurro, allineato a destra nella colonna.
+
+**Commit 2.2 — startIndex configurabile:**
+- Input `#input-start-index` in Step 2. `getStartIndex()` valida (intero ≥ 1, default 1).
+- Tutti i punti che usavano `idx + 1` ora usano `getStartIndex() + idx`.
+
+**Commit 3.1 — Rilevamento e rinomina numerica allegati:**
+- `hasLeadingNumber(name)` esportata da pdf-processor (testata) + duplicata nel renderer.
+- Badge ⚠️ per allegati senza numero iniziale. `<select id="rename-scheme">` con 4 opzioni.
+- `buildRenamedName(name, scheme, index, total)` con zero-padding calcolato sul totale.
+- `att.renamedAs` nel payload → copia file con nome rinominato nell'output.
+- 12 nuovi test (77 totali).
+
+**Commit 3.2 — Dark mode:**
+- Tutti i colori hardcoded → variabili CSS `:root` (light) + `[data-theme="dark"]` + `@media (prefers-color-scheme: dark)`.
+- Toggle 🌙/☀️ nell'header, persiste in `localStorage` con fallback silenzioso.
+
+**Commit 3.3 — Anteprima PDF atto principale:**
+- IPC handler `read-pdf-as-base64` (primi 500KB). `readPdfAsBase64()` in preload.cjs.
+- `<embed id="pdf-preview-embed">` caricato via `data:application/pdf;base64,...` (no blob:).
+
+**Commit 3.4 — Verifica natività PDF:**
+- `checkPdfNativity()` esportata. In `processPCTDocument`: conteggio caratteri mupdf prima dell'elaborazione.
+- `totalChars < 100` → errore bloccante. `totalChars/pagine < 50` → `warning: 'PDF_LOW_TEXT_DENSITY'`.
+- Renderer mostra avviso OCR non bloccante. 2 test aggiornati con testo più lungo.
+
+### Decisioni prese
+
+1. `hasLeadingNumber` duplicata in renderer e pdf-processor: la versione pdf-processor è esportata e coperta da test.
+2. `buildRenamedName` nel renderer costruisce il nome nel payload IPC; `processPCTDocument` lo applica lato main.
+3. Soglia natività 100 caratteri: conservativa e sicura per documenti legali italiani.
+4. I test `processPCTDocument` richiedono testo ≥ 100 caratteri — aggiornato il testo di test.
+
+### File modificati
+
+- `src/main/pdf-processor.js`, `src/main/main.js`, `src/main/preload.cjs`
+- `src/renderer/renderer.js`, `src/renderer/style.css`, `src/renderer/index.html`
+- `src/shared/types.js`, `tests/pdf-processor.test.js`
+
+### Problemi noti / TODO prossima sessione
+
+- Verificare empiricamente la CSP per `data:` URI nell'embed PDF a runtime in Electron
+- pdfjs-dist ancora in package.json — può essere rimosso
+- Electron Builder non ancora configurato (Fase 6 roadmap)
+- `checkPdfNativity` non testata con PDF scansionato reale (funzione esportata, test possibile)
