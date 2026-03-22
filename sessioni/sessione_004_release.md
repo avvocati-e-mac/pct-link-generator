@@ -37,6 +37,11 @@ fare il merge su master e pubblicare la prima release beta su GitHub.
 - ✅ Build Linux AppImage — completata su GitHub Actions
 - ✅ GitHub Release v0.1.1-beta pubblicata come Pre-release
 
+## Stato finale sessione
+
+**Sessione chiusa.** App funzionante, release beta pubblicata e verificata su ARM.
+Prossima sessione: nuove funzioni / ottimizzazioni.
+
 ## Aggiornamenti post-test
 
 - Aggiunta nota quarantena macOS in `README.md` e nel body della GitHub Release (`build.yml`):
