@@ -1,3 +1,8 @@
+/* ===== Utility ===== */
+.hidden {
+  display: none !important;
+}
+
 /* ===== Reset & Base ===== */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -287,4 +292,209 @@ main {
 
 .not-found-list li {
   margin-top: 4px;
+}
+
+/* ===== Steps ===== */
+#view-step1,
+#view-step2 {
+  background: #fff;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.step-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+
+.step2-actions {
+  justify-content: space-between;
+}
+
+/* ===== Pulsante secondario ===== */
+.btn-secondary {
+  background: #fff;
+  color: #4a6cf7;
+  border: 1px solid #4a6cf7;
+  border-radius: 8px;
+  padding: 10px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-secondary:hover {
+  background: #eef2ff;
+}
+
+/* ===== Pulsante pericolo (rimozione batch) ===== */
+.btn-danger {
+  background: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
+  border-radius: 8px;
+  padding: 8px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.btn-danger:hover {
+  background: #fecaca;
+}
+
+.bulk-remove-row {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ===== Prefisso configurabile ===== */
+.prefix-config {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  background: #f0f4ff;
+  border-radius: 8px;
+  padding: 10px 14px;
+}
+
+.prefix-config-label {
+  font-size: 12px;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.prefix-input {
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid #cbd5e0;
+  border-radius: 5px;
+  background: #fff;
+  width: 60px;
+}
+
+.prefix-input-short {
+  width: 36px;
+  text-align: center;
+}
+
+.prefix-input-num {
+  width: 52px;
+}
+
+.prefix-input:focus {
+  outline: 2px solid #4a6cf7;
+  border-color: transparent;
+}
+
+.checkbox-label {
+  cursor: pointer;
+}
+
+/* ===== Drag handle ===== */
+.drag-handle {
+  cursor: grab;
+  color: #a0aec0;
+  font-size: 16px;
+  padding: 0 4px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.attachment-item.drag-over {
+  border-color: #4a6cf7;
+  background: #eef2ff;
+  box-shadow: 0 0 0 2px rgba(74,108,247,0.25);
+}
+
+/* ===== Multi-selezione ===== */
+.attachment-item.selected {
+  background: #dbeafe;
+  border-color: #93c5fd;
+}
+
+/* ===== Modale di preview ===== */
+#modal-preview {
+  max-width: 600px;
+  width: 90vw;
+  margin: auto;
+  border: none;
+  border-radius: 12px;
+  padding: 28px 32px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+}
+
+#modal-preview::backdrop {
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.modal-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 10px;
+}
+
+.modal-subtitle {
+  font-size: 13px;
+  color: #718096;
+  margin-bottom: 8px;
+}
+
+.modal-main-pdf {
+  font-size: 13px;
+  margin-bottom: 14px;
+  word-break: break-all;
+}
+
+.modal-attachments-label {
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.preview-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  margin-bottom: 20px;
+}
+
+.preview-table th {
+  text-align: left;
+  padding: 6px 8px;
+  background: #f5f7fa;
+  border-bottom: 2px solid #e2e8f0;
+  color: #4a5568;
+  font-weight: 600;
+}
+
+.preview-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #1a1a2e;
+}
+
+.preview-table tr:last-child td {
+  border-bottom: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }

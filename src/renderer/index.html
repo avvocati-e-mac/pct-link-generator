@@ -15,65 +15,114 @@
   </header>
 
   <main>
-    <div class="columns">
 
-      <!-- Colonna 1: Atto principale -->
-      <section class="column" id="section-main-pdf">
-        <h2>Atto Principale</h2>
-        <p class="column-desc">Trascina qui il PDF dell'atto principale (un solo file)</p>
+    <!-- ===== Step 1: Atto principale ===== -->
+    <section id="view-step1">
+      <h2 class="step-title">Step 1 — Atto Principale</h2>
+      <p class="column-desc">Trascina qui il PDF dell'atto principale (un solo file)</p>
 
-        <div class="drop-zone" id="drop-zone-main" role="button" tabindex="0"
-             aria-label="Zona drop per l'atto principale PDF">
-          <div class="drop-zone-inner">
-            <span class="drop-icon">📄</span>
-            <span class="drop-text">Trascina il PDF qui<br />o clicca per selezionare</span>
-          </div>
-          <input type="file" id="input-main-pdf" accept=".pdf" hidden />
+      <div class="drop-zone" id="drop-zone-main" role="button" tabindex="0"
+           aria-label="Zona drop per l'atto principale PDF">
+        <div class="drop-zone-inner">
+          <span class="drop-icon">📄</span>
+          <span class="drop-text">Trascina il PDF qui<br />o clicca per selezionare</span>
         </div>
+        <input type="file" id="input-main-pdf" accept=".pdf" hidden />
+      </div>
 
-        <div class="file-info" id="main-pdf-info" hidden>
-          <div class="file-info-row">
-            <span class="file-icon">📄</span>
-            <span class="file-name" id="main-pdf-name"></span>
-            <button class="btn-remove" id="btn-remove-main" aria-label="Rimuovi atto principale">✕</button>
-          </div>
-          <span class="file-path" id="main-pdf-path"></span>
+      <div class="file-info hidden" id="main-pdf-info">
+        <div class="file-info-row">
+          <span class="file-icon">📄</span>
+          <span class="file-name" id="main-pdf-name"></span>
+          <button class="btn-remove" id="btn-remove-main" aria-label="Rimuovi atto principale">✕</button>
         </div>
-      </section>
+        <span class="file-path" id="main-pdf-path"></span>
+      </div>
 
-      <!-- Colonna 2: Allegati -->
-      <section class="column" id="section-attachments">
-        <h2>Allegati</h2>
-        <p class="column-desc">Trascina qui i file allegati — formati PCT 2024 supportati (PDF, RTF, immagini, video, audio, testo, email, zip) — più sessioni supportate</p>
+      <div class="action-row">
+        <button class="btn-primary" id="btn-next" disabled>
+          Avanti →
+        </button>
+      </div>
+    </section>
 
-        <div class="drop-zone" id="drop-zone-attachments" role="button" tabindex="0"
-             aria-label="Zona drop per gli allegati">
-          <div class="drop-zone-inner">
-            <span class="drop-icon">📎</span>
-            <span class="drop-text">Trascina allegati qui<br />o clicca per selezionare</span>
-          </div>
-          <input type="file" id="input-attachments"
-                 accept=".pdf,.rtf,.jpg,.jpeg,.tif,.tiff,.gif,.dcm,.mp4,.m4v,.mov,.mpg,.mpeg,.avi,.mp3,.flac,.raw,.wav,.aiff,.aif,.txt,.xml,.html,.htm,.eml,.msg,.zip,.rar,.arj"
-                 multiple hidden />
+    <!-- ===== Step 2: Allegati ===== -->
+    <section id="view-step2" class="hidden">
+      <h2 class="step-title">Step 2 — Allegati</h2>
+      <p class="column-desc">Trascina qui i file allegati — formati PCT 2024 supportati (PDF, RTF, immagini, video, audio, testo, email, zip) — più sessioni supportate</p>
+
+      <!-- Riga configurazione prefisso -->
+      <div class="prefix-config" id="prefix-config">
+        <label class="prefix-config-label">Prefisso:
+          <input type="text" id="input-prefix" class="prefix-input" value="doc." />
+        </label>
+        <label class="prefix-config-label">Separatore:
+          <input type="text" id="input-separator" class="prefix-input prefix-input-short" value=" " />
+        </label>
+        <label class="prefix-config-label">Num. iniziale:
+          <input type="number" id="input-start-num" class="prefix-input prefix-input-num" value="1" min="1" max="99" />
+        </label>
+        <label class="prefix-config-label checkbox-label">
+          <input type="checkbox" id="input-use-letters" />
+          Usa lettere (A, B, C…)
+        </label>
+      </div>
+
+      <div class="drop-zone" id="drop-zone-attachments" role="button" tabindex="0"
+           aria-label="Zona drop per gli allegati">
+        <div class="drop-zone-inner">
+          <span class="drop-icon">📎</span>
+          <span class="drop-text">Trascina allegati qui<br />o clicca per selezionare</span>
         </div>
+        <input type="file" id="input-attachments"
+               accept=".pdf,.rtf,.jpg,.jpeg,.tif,.tiff,.gif,.dcm,.mp4,.m4v,.mov,.mpg,.mpeg,.avi,.mp3,.flac,.raw,.wav,.aiff,.aif,.txt,.xml,.html,.htm,.eml,.msg,.zip,.rar,.arj"
+               multiple hidden />
+      </div>
 
-        <ul class="attachments-list" id="attachments-list" aria-label="Lista allegati"></ul>
-      </section>
-    </div>
+      <!-- Pulsante rimozione multipla (visibile solo con selezione attiva) -->
+      <div class="bulk-remove-row hidden" id="bulk-remove-row">
+        <button class="btn-danger" id="btn-remove-selected">Rimuovi selezionati</button>
+      </div>
 
-    <!-- Pulsante azione -->
-    <div class="action-row">
-      <button class="btn-primary" id="btn-generate" disabled>
-        Genera Link
-      </button>
-    </div>
+      <ul class="attachments-list" id="attachments-list" aria-label="Lista allegati"></ul>
+
+      <div class="action-row step2-actions">
+        <button class="btn-secondary" id="btn-back">← Indietro</button>
+        <button class="btn-primary" id="btn-generate" disabled>
+          Genera link
+        </button>
+      </div>
+    </section>
 
     <!-- Area messaggi di stato -->
-    <div class="status-area" id="status-area" hidden>
+    <div class="status-area hidden" id="status-area">
       <div class="status-message" id="status-message"></div>
-      <ul class="not-found-list" id="not-found-list" hidden></ul>
+      <ul class="not-found-list hidden" id="not-found-list"></ul>
     </div>
+
   </main>
+
+  <!-- Modale di preview -->
+  <dialog id="modal-preview">
+    <h2 class="modal-title">Riepilogo generazione link</h2>
+    <p class="modal-subtitle">Stai per generare i link per il seguente atto:</p>
+    <p class="modal-main-pdf"><strong>Atto:</strong> <span id="preview-main-pdf"></span></p>
+    <p class="modal-attachments-label"><strong>Allegati:</strong></p>
+    <table class="preview-table">
+      <thead>
+        <tr>
+          <th>N.</th>
+          <th>File</th>
+          <th>Etichetta di ricerca</th>
+        </tr>
+      </thead>
+      <tbody id="preview-tbody"></tbody>
+    </table>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-modal-cancel">Annulla</button>
+      <button class="btn-primary" id="btn-modal-confirm">OK — Genera</button>
+    </div>
+  </dialog>
 
   <script src="renderer.js" type="module"></script>
 </body>
