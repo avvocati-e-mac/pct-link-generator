@@ -88,7 +88,24 @@ function clearMainPdf() {
 
 // ===== Drag & drop: allegati =====
 
-const ACCEPTED_EXTENSIONS = ['.pdf', '.eml', '.msg', '.jpg', '.jpeg'];
+// Formati allegati ammessi dalle Specifiche Tecniche PCT 2024 (DGSIA, 7 agosto 2024)
+// Vigenti dal 30 settembre 2024 — DM n. 44/2011 art. 34
+const ACCEPTED_EXTENSIONS = [
+  // Documenti impaginati
+  '.pdf', '.rtf',
+  // Immagini raster
+  '.jpg', '.jpeg', '.tif', '.tiff', '.gif', '.dcm',
+  // Video
+  '.mp4', '.m4v', '.mov', '.mpg', '.mpeg', '.avi',
+  // Audio
+  '.mp3', '.flac', '.raw', '.wav', '.aiff', '.aif',
+  // Testo e ipertesto
+  '.txt', '.xml', '.html', '.htm',
+  // Posta elettronica
+  '.eml', '.msg',
+  // Compressi
+  '.zip', '.rar', '.arj',
+];
 
 dropZoneAttachments.addEventListener('click', () => inputAttachments.click());
 dropZoneAttachments.addEventListener('keydown', (e) => {

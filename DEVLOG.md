@@ -138,6 +138,33 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## Sessione 003 — Fix coordinate (mupdf) + Fix link Acrobat (PDFString) (2026-03-22)
+
+### Cosa ho fatto
+
+**Bug 1 — Coordinate imprecise (risolto):**
+- Root cause: `buildPositionMap()` con pdfjs usava il content stream non trasformato dalla CTM → la chiave `curX_curY` non matchava mai → si eseguiva solo il fallback proporzionale (impreciso per righe lunghe).
+- Soluzione: sostituito pdfjs con **mupdf**. `stext.walk()` con `onChar()` fornisce il `quad` per-carattere (8 numeri, 4 angoli) già in coordinate PDF native. `matchBoundsFromChars()` calcola bbox esatto.
+- Nota critica indici quad: `[ul.x, ul.y, ur.x, ur.y, ll.x, ll.y, lr.x, lr.y]` → yTop=`quad[1]`, yBottom=`quad[5]` (non `quad[6]` che è lr.x).
+- Paragrafi multi-riga spezzati quando delta-Y tra char consecutivi supera `max(2pt, charH * 0.5)`.
+
+**Bug 2 — Link relativi non funzionanti in Acrobat (risolto):**
+- Root cause: `context.obj()` convertiva stringhe JS in PDFName (es. `/01_file.pdf`). Acrobat interpretava il PDFName come risorsa interna → "Impossibile aprire il file ' '".
+- Fix: `PDFString.of(ann.targetFile)` forza serializzazione come stringa PDF `(01_file.pdf)`.
+- Aggiunto `PDFString` all'import da pdf-lib.
+
+### Decisioni prese
+- mupdf sostituisce pdfjs-dist per estrazione testo. pdfjs-dist rimane in package.json ma non è più usato (da rimuovere in futuro).
+- Coordinate `AnnotationCoord` contengono sempre coordinate mupdf raw. Conversione solo in `addUnderlineLink`.
+- FileSpec dict con `/F` e `/UF` entrambi come PDFString (ISO 32000 §7.11.3).
+
+### Problemi aperti
+- pdfjs-dist ancora in package.json — può essere rimosso in futuro.
+- Le Launch action verso file locali mostrano dialogo di avviso in Acrobat (comportamento di sicurezza, non bug).
+- Branch `feat/pct-2024-formats` da mergiare su master + tag `v0.1.0`.
+
+---
+
 ## Commit 8 — test: pdf-processor unit tests
 
 **16 test tutti verdi.**

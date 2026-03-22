@@ -1,20 +1,15 @@
 /**
- * pdf-processor.js — Logica PDF pura (pdfjs-dist + pdf-lib).
+ * pdf-processor.js — Logica PDF pura (mupdf + pdf-lib).
  * Nessun codice Electron in questo file.
+ *
+ * mupdf: estrae testo con coordinate per-carattere (stext.walk)
+ * pdf-lib: scrive annotazioni link/underline sul PDF
  */
 
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath, pathToFileURL } from 'url';
-import { createRequire } from 'module';
-import { PDFDocument, rgb, PDFName } from 'pdf-lib';
-
-// pdfjs-dist in Node.js: build legacy, workerSrc punta al file locale
-// Nota: non ha default export, si usa import * as
-import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
-const _require = createRequire(import.meta.url);
-const _workerPath = _require.resolve('pdfjs-dist/legacy/build/pdf.worker.mjs');
-pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(_workerPath).href;
+import { PDFDocument, rgb, PDFName, PDFString } from 'pdf-lib';
+import mupdf from 'mupdf';
 
 // ===== Funzione di matching flessibile =====
 
@@ -28,7 +23,6 @@ pdfjsLib.GlobalWorkerOptions.workerSrc = pathToFileURL(_workerPath).href;
 export function buildSearchRegex(label) {
   // Strategia: splitta la label in token alfanumerici, poi li unisce con [\s.]*
   // "doc. 1" → tokens ["doc", "1"] → /doc[\s.]*1\b/i
-  // Questo trova "Doc.1", "doc 1", "DOC. 1", ecc.
   // Il \b finale evita falsi positivi: "doc. 1" non trova "doc. 11"
   const normalized = label.trim();
   const tokens = normalized.match(/[a-zA-ZàèéìòùÀÈÉÌÒÙ]+|\d+/g) || [];
@@ -41,55 +35,136 @@ export function buildSearchRegex(label) {
 // ===== Lettura coordinate testo =====
 
 /**
- * Trova le coordinate di tutti i match di un'etichetta nel PDF.
- * Usa pdfjs-dist in modalità Node.js (no worker, build legacy).
+ * Estrae testo con coordinate per-carattere da una pagina mupdf tramite walk.
+ * Raggruppa i caratteri in "run" fisici: spezza quando la Y cambia
+ * (paragrafo che va a capo = char con Y diversa nella stessa line mupdf).
  *
- * @param {string} pdfPath - Percorso assoluto al PDF
- * @param {string} searchLabel - Etichetta da cercare (es. "doc. 1")
+ * @param {object} page - Pagina mupdf (da doc.loadPage)
+ * @returns {Array<{text: string, chars: Array<{c: string, quad: number[]}>}>}
+ */
+function extractCharRuns(page) {
+  const stext = page.toStructuredText('preserve-whitespace,preserve-spans');
+  const runs  = [];
+  let cur     = null;
+
+  const flushCur = () => {
+    if (cur && cur.text.trim()) runs.push(cur);
+    cur = null;
+  };
+
+  stext.walk({
+    beginTextBlock() { flushCur(); },
+    endTextBlock()   { flushCur(); },
+    beginLine()      { flushCur(); },
+    endLine()        { flushCur(); },
+    onChar(c, origin, font, size, quad) {
+      // quad layout: [ul.x, ul.y, ur.x, ur.y, ll.x, ll.y, lr.x, lr.y]
+      // indici:        0      1     2     3     4     5     6     7
+      const charYTop    = quad[1]; // ul.y = top del carattere
+      const charYBottom = quad[5]; // ll.y = bottom del carattere
+
+      if (!cur) {
+        cur = { text: '', chars: [], yRef: charYTop };
+      } else {
+        // Se la Y è cambiata significativamente (> 2pt), è una nuova riga fisica
+        const charH = Math.abs(charYBottom - charYTop);
+        if (Math.abs(charYTop - cur.yRef) > Math.max(2, charH * 0.5)) {
+          flushCur();
+          cur = { text: '', chars: [], yRef: charYTop };
+        }
+      }
+
+      cur.text += c;
+      cur.chars.push({ c, quad });
+    },
+  });
+  flushCur();
+  return runs;
+}
+
+/**
+ * Calcola il bounding box di una sottostringa matched dentro un run di caratteri.
+ * Usa i quad mupdf (un quad = 8 numeri = 4 angoli del carattere).
+ *
+ * Coordinate mupdf: origine top-left, Y verso il basso (pt).
+ * Restituisce { x, y, width, height } nel sistema mupdf.
+ *
+ * @param {string}  runText    - Testo completo del run
+ * @param {RegExp}  regex      - Pattern da trovare
+ * @param {Array}   chars      - Array di {c, quad} per ogni carattere del run
+ * @returns {{ x: number, y: number, width: number, height: number, matchedText: string } | null}
+ */
+function matchBoundsFromChars(runText, regex, chars) {
+  const match = regex.exec(runText);
+  if (!match) return null;
+  if (chars.length !== runText.length) return null; // sicurezza: mapping 1:1
+
+  const matchStart = match.index;
+  const matchEnd   = matchStart + match[0].length;
+  const matchChars = chars.slice(matchStart, matchEnd);
+  if (matchChars.length === 0) return null;
+
+  // quad layout: [ul.x, ul.y, ur.x, ur.y, ll.x, ll.y, lr.x, lr.y]
+  // indici:        0      1     2     3     4     5     6     7
+  const x      = matchChars[0].quad[0];                                          // ul.x primo char
+  const xRight = matchChars[matchChars.length - 1].quad[2];                      // ur.x ultimo char
+  const yTop   = Math.min(...matchChars.map(ch => ch.quad[1]));                  // ul.y (top)
+  const yBottom= Math.max(...matchChars.map(ch => ch.quad[5]));                  // ll.y (bottom)
+
+  return {
+    x,
+    y:      yTop,
+    width:  xRight - x,
+    height: yBottom - yTop,
+    matchedText: match[0],
+  };
+}
+
+/**
+ * Trova le coordinate di tutti i match di un'etichetta nel PDF.
+ * Usa mupdf per l'estrazione testo con coordinate per-carattere (stext.walk).
+ *
+ * Le coordinate restituite sono nel sistema mupdf (origine top-left, Y verso il basso).
+ * addUnderlineLink converte in sistema pdf-lib (origine bottom-left).
+ *
+ * @param {string} pdfPath      - Percorso assoluto al PDF
+ * @param {string} searchLabel  - Etichetta da cercare (es. "doc. 1")
  * @returns {Promise<Array<{pageIndex: number, x: number, y: number, width: number, height: number, matchedText: string}>>}
  */
 export async function findTextCoordinates(pdfPath, searchLabel) {
   const buffer = await fs.promises.readFile(pdfPath);
-  const uint8Array = new Uint8Array(buffer);
 
-  let pdfDocument;
+  let mupdfDoc;
   try {
-    const loadingTask = pdfjsLib.getDocument({
-      data: uint8Array,
-      verbosity: 0,
-    });
-    pdfDocument = await loadingTask.promise;
+    mupdfDoc = mupdf.Document.openDocument(new Uint8Array(buffer), 'application/pdf');
   } catch (err) {
-    if (err.name === 'PasswordException') {
+    if (err.message?.toLowerCase().includes('password')) {
       throw new Error(`Il PDF è protetto da password: ${path.basename(pdfPath)}`);
     }
     throw new Error(`PDF non leggibile o corrotto: ${path.basename(pdfPath)} — ${err.message}`);
   }
 
-  const regex = buildSearchRegex(searchLabel);
+  const regex   = buildSearchRegex(searchLabel);
   const results = [];
+  const numPages = mupdfDoc.countPages();
 
-  for (let pageIndex = 0; pageIndex < pdfDocument.numPages; pageIndex++) {
-    const page = await pdfDocument.getPage(pageIndex + 1); // pdfjs è 1-based
-    const textContent = await page.getTextContent();
+  for (let pageIndex = 0; pageIndex < numPages; pageIndex++) {
+    const page = mupdfDoc.loadPage(pageIndex);
+    const runs = extractCharRuns(page);
 
-    for (const item of textContent.items) {
-      if (!item.str || item.str.trim() === '') continue;
-      if (!regex.test(item.str)) continue;
+    for (const run of runs) {
+      if (!run.text.trim() || !regex.test(run.text)) continue;
 
-      const x = item.transform[4];
-      const y = item.transform[5];
-      const width = item.width;
-      // height: usa item.height se disponibile, altrimenti Math.abs(scaleY)
-      const height = item.height > 0 ? item.height : Math.abs(item.transform[3]);
+      const bounds = matchBoundsFromChars(run.text, regex, run.chars);
+      if (!bounds) continue;
 
       results.push({
         pageIndex, // 0-based, coerente con pdf-lib
-        x,
-        y,
-        width,
-        height,
-        matchedText: item.str,
+        x:      bounds.x,
+        y:      bounds.y,         // sistema mupdf (top-left, Y verso il basso)
+        width:  bounds.width,
+        height: bounds.height,
+        matchedText: bounds.matchedText,
       });
     }
   }
@@ -97,13 +172,13 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
   return results;
 }
 
-// ===== Commit 6: Scrittura annotazioni link =====
+// ===== Scrittura annotazioni link =====
 
 /**
  * @typedef {Object} Annotation
  * @property {number} pageIndex  - Indice pagina 0-based
  * @property {number} x
- * @property {number} y          - Coordinata Y sistema pdfjs (baseline)
+ * @property {number} y          - Coordinata Y sistema mupdf (top-left, Y verso il basso)
  * @property {number} width
  * @property {number} height
  * @property {string} targetFile - Nome file allegato (relativo, es. "allegato_1.pdf")
@@ -112,6 +187,9 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
 /**
  * Aggiunge sottolineature blu e annotazioni Link/Launch a un PDF.
  * Il PDF originale non viene modificato — il risultato è salvato su outputPath.
+ *
+ * Conversione coordinate: mupdf usa origine top-left (Y↓), pdf-lib usa origine
+ * bottom-left (Y↑). La pagina A4 ha altezza 841.89pt in entrambi i sistemi.
  *
  * @param {string} pdfPath    - Percorso PDF sorgente
  * @param {string} outputPath - Percorso PDF di destinazione
@@ -126,18 +204,20 @@ export async function addUnderlineLink(pdfPath, outputPath, annotations) {
     const page = pdfDoc.getPage(ann.pageIndex);
     const { height: pageHeight } = page.getSize();
 
-    // Inversione asse Y: pdfjs (top-down baseline) → pdf-lib (bottom-up)
+    // Conversione mupdf (top-left, Y↓) → pdf-lib (bottom-left, Y↑)
+    // ann.y = yTop in mupdf → yBottom in pdf-lib = pageHeight - (ann.y + ann.height)
     const yPdfLib = pageHeight - ann.y - ann.height;
 
-    // 1. Sottolineatura blu
+    // 1. Sottolineatura blu (al bordo inferiore del testo)
     page.drawLine({
-      start: { x: ann.x, y: yPdfLib },
-      end: { x: ann.x + ann.width, y: yPdfLib },
+      start: { x: ann.x,              y: yPdfLib },
+      end:   { x: ann.x + ann.width,  y: yPdfLib },
       thickness: 1.5,
       color: rgb(0, 0.27, 0.8),
     });
 
-    // 2. Annotazione Link con Launch action (basso livello pdf-lib)
+    // 2. Annotazione Link con Launch action e FileSpec dict per path relativi
+    // ISO 32000 §7.11.3: FileSpec dict con /F (ASCII) e /UF (Unicode) per path relativi
     const linkDict = pdfDoc.context.obj({
       Type: 'Annot',
       Subtype: 'Link',
@@ -146,13 +226,17 @@ export async function addUnderlineLink(pdfPath, outputPath, annotations) {
       A: {
         Type: 'Action',
         S: 'Launch',
-        F: ann.targetFile,
+        F: pdfDoc.context.obj({
+          Type: 'Filespec',
+          F:  PDFString.of(ann.targetFile),   // PDFString per path relativo ASCII
+          UF: PDFString.of(ann.targetFile),   // PDFString per path relativo Unicode
+        }),
         NewWindow: true,
       },
     });
 
     // Aggiunge l'annotazione all'array Annots della pagina
-    const annotsKey = PDFName.of('Annots');
+    const annotsKey     = PDFName.of('Annots');
     const existingAnnots = page.node.get(annotsKey);
     if (existingAnnots) {
       existingAnnots.push(linkDict);
@@ -165,7 +249,7 @@ export async function addUnderlineLink(pdfPath, outputPath, annotations) {
   await fs.promises.writeFile(outputPath, savedBytes);
 }
 
-// ===== Commit 7: Funzione orchestratrice =====
+// ===== Funzione orchestratrice =====
 
 /**
  * @typedef {Object} ProcessInput
@@ -213,10 +297,10 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
       for (const match of matches) {
         allAnnotations.push({
           pageIndex: match.pageIndex,
-          x: match.x,
-          y: match.y,
-          width: match.width,
-          height: match.height,
+          x:         match.x,
+          y:         match.y,
+          width:     match.width,
+          height:    match.height,
           targetFile: att.name, // nome relativo — entrambi i file nella stessa cartella
         });
       }
@@ -225,7 +309,7 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
   }
 
   // 3. Scrive il PDF modificato nella outputFolder
-  const mainPdfName = path.basename(mainPdfPath);
+  const mainPdfName    = path.basename(mainPdfPath);
   const outputMainPath = path.join(outputFolder, mainPdfName);
   await addUnderlineLink(mainPdfPath, outputMainPath, allAnnotations);
   console.log(`[PDF] PDF modificato salvato: ${mainPdfName}`);
