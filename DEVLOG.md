@@ -459,3 +459,38 @@ con `workerSrc = ''` — richiede il path del worker come `file://` URL. Usato
 - `READ_PDF_BASE64` / `readPdfAsBase64` ancora presenti ma inutilizzati — rimuovere in futuro
 - pdfjs-dist ancora in package.json — può essere rimosso
 - Electron Builder non ancora configurato (Fase 6 roadmap)
+
+---
+
+## Sessione 014 — Release v0.4.0/v0.4.1, fix icona DMG, fix release notes (2026-03-22)
+
+### Cosa ho fatto
+
+**Release v0.4.0:**
+- Push di 11 commit su `origin/master`, tag `v0.4.0`, GitHub Release creata manualmente con changelog strutturato
+
+**Fix release notes automatiche:**
+- `body:` hardcodato in `softprops/action-gh-release@v2` sovrascriveva `generate_release_notes: true`
+- Aggiunto `append_body: true`: changelog auto-generato in testa, istruzioni installazione in fondo
+- Dalla prossima release il changelog viene generato automaticamente dai Conventional Commits
+
+**Fix icona assente nel DMG (CRITICO):**
+- Root cause: `electron-builder.config.js` era ESModule — electron-builder 25.x non leggeva il campo `icon` → usava icona default Electron
+- Fix: convertito in `electron-builder.config.cjs` (CommonJS `module.exports`) + `icon:` esplicito in `mac`, `win`, `linux`
+- Aggiornati tutti gli script `npm run dist:*` e il workflow CI con `--config electron-builder.config.cjs`
+- Bump patch: `v0.4.0` → `v0.4.1`
+
+**Fix documentazione:**
+- Comando quarantena macOS corretto: `sudo xattr -cr /Applications/pct-link-generator.app`
+- README: aggiunto link all'articolo PCT su avvocati-e-mac.it
+
+### Decisioni prese
+- Bump patch (non re-tag v0.4.0) perché il fix riguarda solo il packaging, non il codice app
+- `electron-builder.config.cjs` mantenuto separato (non inline in package.json) per leggibilità
+- Release notes miste (auto + corpo fisso) invece di solo auto: le istruzioni di installazione macOS sono necessarie per utenti non tecnici
+
+### File modificati
+- `electron-builder.config.js` → `electron-builder.config.cjs`
+- `.github/workflows/build.yml`
+- `package.json`
+- `README.md`

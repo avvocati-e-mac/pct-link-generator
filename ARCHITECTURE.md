@@ -82,6 +82,13 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 | `preload.cjs` | Bridge sicuro (CJS — Electron non supporta ESM nel preload). Espone `window.electronAPI` via `contextBridge`: `processPDF`, `selectOutputFolder`, `getPathForFile`, `readPdfAsBase64`, `renderPdfPage`, `quitApp`. |
 | `pdf-processor.js` | Tutta la logica PDF: `checkPdfNativity` (verifica testo estraibile), `findTextCoordinates` (mupdf), `addUnderlineLink` (pdf-lib), `buildRenamedName` / `hasLeadingNumber` (rinomina allegati), `processPCTDocument` (orchestrazione). **Nessun codice Electron.** |
 
+### Packaging
+
+| File | Responsabilità |
+|------|----------------|
+| `electron-builder.config.cjs` | Configurazione electron-builder in formato **CommonJS** (`module.exports`). Il formato ESModule (`.js`) non è supportato correttamente da electron-builder 25.x per la lettura dei campi `icon`. Definisce target DMG (macOS ARM + x64), NSIS (Windows x64), AppImage (Linux x64), icone esplicite per ogni piattaforma. |
+| `.github/workflows/build.yml` | CI/CD: 4 job paralleli (mac-arm, mac-x64, windows, linux) + job `release` che aggrega gli artefatti. Release notes auto-generate dai Conventional Commits (`generate_release_notes: true`) con istruzioni di installazione in coda (`append_body: true`). |
+
 ---
 
 ## Componenti UI in `src/renderer/`
