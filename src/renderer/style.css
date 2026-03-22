@@ -181,16 +181,17 @@ main {
   display: flex;
   align-items: center;
   gap: 8px;
+  transition: transform 0.15s ease, opacity 0.15s ease, background-color 0.12s;
 }
 
 .attachment-item .att-name {
-  flex: 0 0 auto;
-  font-weight: 600;
-  font-size: 12px;
-  max-width: 120px;
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 600;
+  font-size: 12px;
 }
 
 .attachment-item .att-label {
@@ -383,6 +384,13 @@ main {
   border-color: #4a6cf7;
   background: #eef2ff;
   box-shadow: 0 0 0 2px rgba(74,108,247,0.25);
+}
+
+.attachment-item.dragging {
+  opacity: 0.4;
+  background: #e0e7ff;
+  border: 2px dashed #4a6cf7;
+  transform: scale(0.98);
 }
 
 /* ===== Multi-selezione ===== */
