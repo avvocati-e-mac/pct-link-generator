@@ -521,26 +521,40 @@ export function hasLeadingNumber(name) {
 }
 
 /**
- * Costruisce il nuovo nome file secondo lo schema di rinomina scelto.
- * Se il file ha già un numero iniziale, ritorna il nome originale invariato.
+ * Rimuove il prefisso numerico iniziale da un nome file se presente.
+ * Es: "01_Comparsa.pdf" → "Comparsa.pdf", "doc_1_foo.pdf" → "foo.pdf"
  *
- * @param {string} originalName - Nome file originale (es. "contratto.pdf")
+ * @param {string} name
+ * @returns {string}
+ */
+function stripLeadingNumber(name) {
+  return name
+    .replace(/^doc[-_]\d+[-_\s]?/i, '') // doc_1_ o doc-1-
+    .replace(/^\d+[-_\s]/, '');          // 01_ o 1-
+}
+
+/**
+ * Costruisce il nuovo nome file secondo lo schema di rinomina scelto.
+ * Se il file ha già un numero iniziale, lo rimuove prima di applicare il nuovo schema.
+ *
+ * @param {string} originalName - Nome file originale (es. "01_contratto.pdf")
  * @param {'numbered'|'doc_'|'allegato_'} scheme - Schema di rinomina
- * @param {number} index - Indice 1-based dell'allegato nella lista
+ * @param {number} index - Numero 1-based (già calcolato con startIndex)
  * @param {number} [total=1] - Numero totale di allegati (per calcolare zero-padding)
  * @returns {string} Nuovo nome file
  */
 export function buildRenamedName(originalName, scheme, index, total = 1) {
-  if (hasLeadingNumber(originalName)) return originalName;
+  // Rimuove numero iniziale esistente prima di applicare lo schema
+  const baseName = stripLeadingNumber(originalName);
 
   // Calcola zero-padding in base al totale
   const padLen = total <= 9 ? 1 : total <= 99 ? 2 : 3;
   const padded = String(index).padStart(padLen, '0');
 
   switch (scheme) {
-    case 'numbered':  return `${padded}_${originalName}`;
-    case 'doc_':      return `doc_${padded}_${originalName}`;
-    case 'allegato_': return `allegato_${padded}_${originalName}`;
+    case 'numbered':  return `${padded}_${baseName}`;
+    case 'doc_':      return `doc_${padded}_${baseName}`;
+    case 'allegato_': return `allegato_${padded}_${baseName}`;
     default:          return originalName;
   }
 }

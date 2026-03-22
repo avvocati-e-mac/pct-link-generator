@@ -552,7 +552,7 @@ async function runGeneration() {
       // La label è la posizione a partire da startIndex, come stringa
       attachments: attachments.map((att, idx) => {
         const scheme = renameSchemeSelect.value;
-        const renamedAs = (scheme !== 'none' && !hasLeadingNumber(att.name))
+        const renamedAs = scheme !== 'none'
           ? buildRenamedName(att.name, scheme, getStartIndex() + idx, attachments.length)
           : undefined;
         return {

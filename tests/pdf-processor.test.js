@@ -348,8 +348,14 @@ describe('buildRenamedName', () => {
     expect(buildRenamedName('contratto.pdf', 'allegato_', 1, 10)).toBe('allegato_01_contratto.pdf');
   });
 
-  it('non rinomina se il file ha già un numero iniziale', () => {
+  it('schema numbered: sostituisce numero iniziale esistente', () => {
+    // strip "01_" → "contratto.pdf", poi applica numbered con index=1, total=10 → "01_contratto.pdf"
     expect(buildRenamedName('01_contratto.pdf', 'numbered', 1, 10)).toBe('01_contratto.pdf');
+  });
+
+  it('schema doc_: sostituisce numero iniziale esistente', () => {
+    // strip "01_" → "contratto.pdf", poi applica doc_ con index=1, total=10 → "doc_01_contratto.pdf"
+    expect(buildRenamedName('01_contratto.pdf', 'doc_', 1, 10)).toBe('doc_01_contratto.pdf');
   });
 
   it('schema none (default): ritorna nome originale', () => {
