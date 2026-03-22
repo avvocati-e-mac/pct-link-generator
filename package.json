@@ -7,14 +7,18 @@
   "scripts": {
     "start": "electron .",
     "test": "vitest run",
-    "build": "echo 'Build placeholder — da configurare con electron-builder'"
+    "build": "electron-builder --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:linux": "electron-builder --linux --publish never"
   },
   "dependencies": {
-    "electron": "^33.0.0",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^4.7.76"
   },
   "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8",
     "vitest": "^2.1.8"
   }
 }
