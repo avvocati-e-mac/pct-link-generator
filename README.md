@@ -63,7 +63,7 @@ L'app non è notarizzata da Apple. Al primo avvio macOS la mette in quarantena e
 **Prima di avviare l'app**, esegui questo comando nel Terminale:
 
 ```bash
-sudo xattr -cr /Applications/pct-link-generator.app
+sudo xattr -cr /Applications/PCT\ Link\ Generator.app
 ```
 
 > Sostituisci il percorso se hai installato l'app in una cartella diversa da `/Applications`.
