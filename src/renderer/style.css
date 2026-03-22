@@ -355,12 +355,13 @@ main {
 /* ===== Lista allegati ===== */
 .attachments-list {
   list-style: none;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
   gap: 8px;
   flex: 1;
   overflow-y: auto;
   min-height: 0;
+  align-content: start;
 }
 
 .attachment-item {
@@ -454,6 +455,83 @@ main {
   cursor: not-allowed;
 }
 
+/* ===== Step indicator ===== */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.step-indicator-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.si-circle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-border);
+  color: var(--color-text-muted);
+  font-size: 14px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s;
+}
+
+.si-label {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.si-connector {
+  height: 2px;
+  background: var(--color-border);
+  width: 60px;
+  margin: 0 8px 20px;
+  transition: background 0.2s;
+}
+
+.step-indicator-item.active .si-circle { background: var(--color-accent); color: #fff; }
+.step-indicator-item.active .si-label  { color: var(--color-accent); font-weight: 600; }
+.step-indicator-item.completed .si-circle { background: var(--color-status-success); color: #fff; }
+.step-indicator-item.completed .si-label  { color: var(--color-status-success); }
+.si-connector.completed { background: var(--color-accent); }
+
+/* ===== Form fields ===== */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.form-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.file-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  font-style: italic;
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
 /* ===== Area stato ===== */
 .status-area {
   background: var(--color-surface);
@@ -543,13 +621,29 @@ main {
 }
 
 .step-title {
-  font-size: 16px;
+  font-size: 22px;
   font-weight: 700;
   color: var(--color-text);
+  letter-spacing: -0.3px;
+}
+
+.step-subtitle {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-top: -4px;
 }
 
 .step2-actions {
   justify-content: space-between;
+}
+
+#view-step1 .action-row,
+#view-step2 .action-row {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border);
+  padding-top: 12px;
+  margin-top: 4px;
 }
 
 /* ===== Pulsante secondario ===== */
@@ -705,6 +799,7 @@ main {
   overflow: hidden;
   flex: 1;
   min-height: 200px;
+  max-height: 280px;
   background: #fff;
   display: flex;
   flex-direction: column;

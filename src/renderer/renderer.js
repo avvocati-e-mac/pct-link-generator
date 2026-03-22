@@ -77,6 +77,12 @@ const btnRemoveSelected   = document.getElementById('btn-remove-selected');
 const inputStartIndex     = document.getElementById('input-start-index');
 const renameSchemeSelect  = document.getElementById('rename-scheme');
 
+const siStep1             = document.getElementById('si-step1');
+const siStep2             = document.getElementById('si-step2');
+const siStep3             = document.getElementById('si-step3');
+const siConn1             = document.getElementById('si-conn1');
+const siConn2             = document.getElementById('si-conn2');
+
 const statusArea          = document.getElementById('status-area');
 const progressBar         = document.getElementById('progress-bar');
 const statusMessage       = document.getElementById('status-message');
@@ -225,6 +231,7 @@ function buildRenamedName(originalName, scheme, index, total) {
 function showStep1() {
   viewStep1.classList.remove('hidden');
   viewStep2.classList.add('hidden');
+  updateStepIndicator(1);
 }
 
 /**
@@ -233,6 +240,7 @@ function showStep1() {
 function showStep2() {
   viewStep1.classList.add('hidden');
   viewStep2.classList.remove('hidden');
+  updateStepIndicator(2);
 }
 
 btnNext.addEventListener('click', () => {
@@ -675,17 +683,50 @@ function setStatus(type, text) {
   statusActions.classList.add('hidden');
   // Rimuovi eventuali avvisi bis/ter dal ciclo precedente
   statusArea.querySelectorAll('.status-warning').forEach(el => el.remove());
+  if (type === 'success' || type === 'warning') updateStepIndicator(3);
 }
 
 /**
- * Mostra la lista di etichette non trovate.
+ * Trasforma una label notFound nel formato "N — nome_file.ext"
+ * in una frase leggibile per l'utente finale.
+ *
+ * @param {string} label - Es. "21 — 20_Indice_Allegati.xml"
+ * @returns {string} HTML già escapato
+ */
+function formatNotFoundLabel(label) {
+  const match = label.match(/^(\d+)\s+—\s+(.+)$/);
+  if (match) {
+    const num  = escapeHtml(match[1]);
+    const name = escapeHtml(match[2]);
+    return `Il documento ${num} (${name}) non è stato trovato nell'atto principale`;
+  }
+  return escapeHtml(label);
+}
+
+/**
+ * Aggiorna l'indicatore di step visivo.
+ * @param {1|2|3} activeStep - Step corrente
+ */
+function updateStepIndicator(activeStep) {
+  [[siStep1, 1], [siStep2, 2], [siStep3, 3]].forEach(([el, n]) => {
+    el.classList.remove('active', 'completed');
+    const circle = el.querySelector('.si-circle');
+    if (n < activeStep)      { el.classList.add('completed'); circle.textContent = '✓'; }
+    else if (n === activeStep) { el.classList.add('active');    circle.textContent = String(n); }
+    else                       { circle.textContent = String(n); }
+  });
+  [siConn1, siConn2].forEach((el, i) => {
+    el.classList.toggle('completed', i + 1 < activeStep);
+  });
+}
+
+/**
+ * Mostra la lista di allegati non trovati nell'atto.
  * @param {string[]} labels
  */
 function showNotFound(labels) {
   notFoundList.classList.remove('hidden');
-  notFoundList.innerHTML = labels
-    .map(l => `<li>${escapeHtml(l)}</li>`)
-    .join('');
+  notFoundList.innerHTML = labels.map(l => `<li>${formatNotFoundLabel(l)}</li>`).join('');
 }
 
 btnQuit.addEventListener('click', () => {
@@ -711,3 +752,6 @@ function escapeHtml(str) {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 }
+
+// Stato iniziale step indicator
+updateStepIndicator(1);

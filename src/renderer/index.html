@@ -19,10 +19,28 @@
 
   <main>
 
+    <!-- ===== Step indicator ===== -->
+    <div class="step-indicator" id="step-indicator">
+      <div class="step-indicator-item active" id="si-step1">
+        <span class="si-circle">1</span>
+        <span class="si-label">Atto principale</span>
+      </div>
+      <div class="si-connector" id="si-conn1"></div>
+      <div class="step-indicator-item" id="si-step2">
+        <span class="si-circle">2</span>
+        <span class="si-label">Allegati</span>
+      </div>
+      <div class="si-connector" id="si-conn2"></div>
+      <div class="step-indicator-item" id="si-step3">
+        <span class="si-circle">3</span>
+        <span class="si-label">Generazione</span>
+      </div>
+    </div>
+
     <!-- ===== Step 1: Atto principale ===== -->
     <section id="view-step1">
-      <h2 class="step-title">Step 1 — Atto Principale</h2>
-      <p class="column-desc">Trascina qui il PDF dell'atto principale (un solo file)</p>
+      <h2 class="step-title">Carica l'atto principale</h2>
+      <p class="step-subtitle">Trascina qui il PDF dell'atto principale (un solo file). Questo è il documento che riceverà i link cliccabili agli allegati.</p>
 
       <div class="drop-zone" id="drop-zone-main" role="button" tabindex="0"
            aria-label="Zona drop per l'atto principale PDF">
@@ -40,6 +58,7 @@
           <button class="btn-remove" id="btn-remove-main" aria-label="Rimuovi atto principale">✕</button>
         </div>
         <span class="file-path" id="main-pdf-path"></span>
+        <p class="file-hint">Per rimuovere o sostituire il file, clicca la ✕ a destra del nome.</p>
         <div class="pdf-preview-container hidden" id="pdf-preview-container">
           <img id="pdf-preview-img" class="pdf-preview-img" alt="Anteprima atto principale" />
           <div class="pdf-nav" id="pdf-nav">
@@ -59,22 +78,24 @@
 
     <!-- ===== Step 2: Allegati ===== -->
     <section id="view-step2" class="hidden">
-      <h2 class="step-title">Step 2 — Allegati</h2>
-      <p class="column-desc">Trascina qui i file allegati — formati PCT 2024 supportati (PDF, RTF, immagini, video, audio, testo, email, zip) — più sessioni supportate</p>
+      <h2 class="step-title">Aggiungi gli allegati</h2>
+      <p class="step-subtitle">Trascina qui i file allegati — formati PCT 2024 supportati (PDF, RTF, immagini, video, audio, testo, email, zip). Puoi aggiungere file in più sessioni. Trascina ⠿ per riordinare.</p>
 
-      <div class="start-index-row">
-        <label for="input-start-index">Numero primo allegato:</label>
+      <div class="form-field">
+        <label class="form-label" for="input-start-index">Numero del primo allegato</label>
         <input type="number" id="input-start-index" min="1" value="1" class="start-index-input" />
+        <p class="form-hint">Il numero con cui inizia la numerazione degli allegati nell'atto. Di solito è 1 — controlla il tuo atto per verificarlo.</p>
       </div>
 
-      <div class="rename-scheme-row">
-        <label for="rename-scheme">Rinomina allegati nell'output:</label>
+      <div class="form-field">
+        <label class="form-label" for="rename-scheme">Rinomina i file nella cartella di output</label>
         <select id="rename-scheme" class="rename-scheme-select">
-          <option value="none">Nessuna rinomina</option>
-          <option value="numbered">01, 02, 03…</option>
-          <option value="doc_">doc_01, doc_02…</option>
-          <option value="allegato_">allegato_01, allegato_02…</option>
+          <option value="none">Non rinominare — mantieni i nomi originali</option>
+          <option value="numbered">Aggiungi numero (es. 01_NomeFile.pdf)</option>
+          <option value="doc_">Prefisso "doc_" (es. doc_01_NomeFile.pdf)</option>
+          <option value="allegato_">Prefisso "allegato_" (es. allegato_01_NomeFile.pdf)</option>
         </select>
+        <p class="form-hint">I file originali non vengono mai modificati — la rinomina è applicata solo alla copia nella cartella di output.</p>
       </div>
 
       <div class="drop-zone" id="drop-zone-attachments" role="button" tabindex="0"
