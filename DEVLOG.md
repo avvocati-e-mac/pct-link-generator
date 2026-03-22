@@ -205,3 +205,92 @@ join con `[\s.]*` + `\b`.
 **Problema risolto:** pdfjs-dist 4.x non funziona con `disableWorker: true` né
 con `workerSrc = ''` — richiede il path del worker come `file://` URL. Usato
 `createRequire + pathToFileURL` per risolvere il path corretto.
+
+---
+
+## Sessione 005 — Generic Patterns, UI Multi-Step, Preview Modal, Drag-Reorder (2026-03-22)
+
+### Cosa ho fatto
+
+**Commit 2.1 — refactor: estrai DEFAULT_ATTACHMENT_PREFIX e DEFAULT_ATTACHMENT_SEPARATOR**
+- Aggiunte costanti `DEFAULT_ATTACHMENT_PREFIX = 'doc.'` e `DEFAULT_ATTACHMENT_SEPARATOR = ' '`
+  in `src/shared/types.js`
+- Eliminato hardcoding di `"doc."` e `" "` in `renderer.js` — import da types.js
+- 16 test verdi
+
+**Commit 2.2 — fix: word boundary preciso in buildSearchRegex**
+- Sostituito `\b` finale con `(?![a-zA-Z0-9])` lookahead negativo
+- `"doc. 1"` ora NON fa match su `"doc. 11"`, `"doc. 12"`, `"doc. 1a"`
+- Aggiunti test: `"doc. 12"` → false, `"doc. 1a"` → false, `"allegato AB"` → false
+- 20 test verdi
+
+**Commit 2.3 — feat: renumberDefaultLabels funzionante**
+- Campo `customLabel: boolean` aggiunto all'oggetto `Attachment` (typedef + renderer)
+- `updateLabel()` ora setta `customLabel = true` quando l'utente modifica il campo
+- `renumberDefaultLabels()` implementata: rinumera solo le label con `customLabel !== true`
+- Chiamata anche in `moveAttachment()` dopo ogni riordino
+- 20 test verdi
+
+**Commit 3.1 — feat: buildSearchRegex con sinonimi italiani PCT**
+- Esportata costante `LABEL_SYNONYM_GROUPS` in `pdf-processor.js`
+- `buildSearchRegex` ora espande il primo token se è in un gruppo sinonimi:
+  `"doc. 1"` → match su `"documento 1"`, `"Allegato 1"`, `"all. 1"`, `"ex 1"`, ecc.
+- Abbreviazioni ≤ 4 char ottengono il punto opzionale (`doc` → `doc\.?`)
+- Token non nel gruppo sinonimi: match esatto (es. `"paragrafo 3"` non si espande)
+- 19 nuovi test sinonimi + 1 test export LABEL_SYNONYM_GROUPS = 39 test totali
+
+**Commit 3.2/3.3/3.4/3.5/3.6 — feat: UI multi-step, prefisso configurabile, drag-reorder, multi-selezione, modale preview**
+- `index.html` ristrutturato in `#view-step1` e `#view-step2` con classe `.hidden`
+- Navigazione step1 ↔ step2 con pulsanti "Avanti →" e "← Indietro"
+- Riga configurazione prefisso: input testo prefisso/separatore, input numero iniziale, checkbox lettere
+- `buildDefaultLabel()` per generare label configurabili (es. `doc. A`, `all. 03`)
+- Drag-to-reorder con `<span class="drag-handle">⠿</span>` — HTML5 Drag & Drop nativo
+- Multi-selezione con Click / Shift+Click (range) / Cmd+Click macOS / Ctrl+Click
+- Pulsante "Rimuovi selezionati" visibile solo con selezione attiva
+- `<dialog id="modal-preview">` con tabella riepilogo, "OK — Genera" e "Annulla"
+- Uso coerente di `.hidden` (classe CSS) invece dell'attributo `hidden`
+- CSS aggiornato: `.hidden`, `.btn-secondary`, `.btn-danger`, `.drag-handle`,
+  `.attachment-item.drag-over`, `.attachment-item.selected`, `#modal-preview`,
+  `.prefix-config`, `.preview-table`, `.step2-actions`
+- 39 test verdi
+
+### Decisioni prese
+
+1. **`customLabel` come campo booleano:** soluzione semplice e non invasiva rispetto
+   a un approccio basato su "valore originale memorizzato". Se l'utente vuole tornare
+   al default, deve cancellare il campo — comportamento intuitivo.
+
+2. **Sinonimi solo sul primo token:** la logica di espansione si applica al solo prefisso
+   (primo token). I token successivi (numero/lettera) non vengono espansi. Scelta
+   conservativa per evitare falsi positivi su label complesse.
+
+3. **Abbreviazioni ≤ 4 char con punto opzionale:** `doc` → `doc\.?`, `all` → `all\.?`,
+   ma `documento` → `documento` (senza punto opzionale). Soglia empirica che copre
+   tutte le abbreviazioni reali nel contesto PCT italiano.
+
+4. **Drag & Drop nativo per riordino:** nessuna libreria esterna. Inserimento prima/dopo
+   basato sulla metà verticale del target (`e.clientY < rect.top + rect.height / 2`).
+
+5. **Classe `.hidden` invece dell'attributo `hidden`:** permette futura transizione CSS
+   su show/hide senza modifiche al JS. I vecchi elementi che usavano l'attributo `hidden`
+   sono stati aggiornati.
+
+6. **Modale `<dialog>` nativa:** usa l'API `showModal()` / `close()` del browser —
+   nessuna libreria UI. Il backdrop è stilizzato via `::backdrop` in CSS.
+
+### File modificati
+
+- `src/shared/types.js` — aggiunte costanti prefisso, campo customLabel nel typedef
+- `src/main/pdf-processor.js` — fix word boundary, aggiunta LABEL_SYNONYM_GROUPS, espansione sinonimi
+- `src/renderer/renderer.js` — riscrittura completa con tutte le nuove feature
+- `src/renderer/index.html` — struttura multi-step, dialog modale, riga prefisso
+- `src/renderer/style.css` — nuovi stili per tutte le nuove feature
+- `tests/pdf-processor.test.js` — +23 test (word boundary, sinonimi PCT)
+- `sessioni/005-review.md` — analisi del codice baseline
+
+### Problemi noti / TODO prossima sessione
+
+- pdfjs-dist ancora in package.json — può essere rimosso
+- Nessun test per la logica UI del renderer (test solo su pdf-processor)
+- Electron Builder non ancora configurato (Fase 6 roadmap)
+- La build CI su GitHub Actions non è stata aggiornata per questa sessione
