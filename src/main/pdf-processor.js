@@ -342,19 +342,63 @@ export async function addUnderlineLink(pdfPath, outputPath, annotations) {
  * @property {boolean}  success
  * @property {number}   processedAnnotations
  * @property {string[]} notFound
+ * @property {string[]} unsupportedPatterns - pattern bis/ter trovati ma non linkati
  */
+
+/**
+ * Scansiona il testo del PDF cercando pattern {prefisso}{N}bis/ter/quater
+ * (senza spazio tra numero e suffisso) che non vengono linkati.
+ *
+ * @param {object} doc - Documento mupdf già aperto
+ * @returns {string[]} Array di pattern trovati (es. ["doc. 1bis", "allegato 2ter"])
+ */
+function findUnsupportedBisPatterns(doc) {
+  const bisRegex = /(?:doc\.?|documento|all\.?|allegato|att\.?|attaccato)\s*(?:n\.?\s*)?\d+(?:bis|ter|quater|quinquies)/gi;
+  const found = new Set();
+  const pageCount = doc.countPages();
+  for (let i = 0; i < pageCount; i++) {
+    const page = doc.loadPage(i);
+    const stext = page.toStructuredText('preserve-whitespace');
+    const text = stext.asText();
+    let m;
+    while ((m = bisRegex.exec(text)) !== null) {
+      found.add(m[0].trim());
+    }
+    page.destroy();
+  }
+  return [...found];
+}
 
 /**
  * Processo completo PCT:
  * 1. Copia allegati nella outputFolder
  * 2. Cerca le etichette nel PDF principale
  * 3. Aggiunge annotazioni link al PDF modificato
- * 4. Restituisce un report (mai lancia eccezione per etichette non trovate)
+ * 4. Segnala pattern bis/ter/quater non supportati
+ * 5. Restituisce un report (mai lancia eccezione per etichette non trovate)
  *
  * @param {ProcessInput} input
  * @returns {Promise<ProcessResult>}
  */
 export async function processPCTDocument({ mainPdfPath, attachments, outputFolder }) {
+  // 0. Apri il documento mupdf una sola volta per rilevare pattern non supportati
+  const mainBuffer = await fs.promises.readFile(mainPdfPath);
+  let mupdfDoc;
+  try {
+    mupdfDoc = mupdf.Document.openDocument(new Uint8Array(mainBuffer), 'application/pdf');
+  } catch (err) {
+    if (err.message?.toLowerCase().includes('password')) {
+      throw new Error(`Il PDF è protetto da password: ${path.basename(mainPdfPath)}`);
+    }
+    throw new Error(`PDF non leggibile o corrotto: ${path.basename(mainPdfPath)} — ${err.message}`);
+  }
+
+  // Rileva pattern bis/ter/quater non supportati
+  const unsupportedPatterns = findUnsupportedBisPatterns(mupdfDoc);
+  if (unsupportedPatterns.length > 0) {
+    console.log(`[PDF] Pattern non supportati trovati: ${unsupportedPatterns.join(', ')}`);
+  }
+
   // 1. Copia allegati nella cartella di output
   for (const att of attachments) {
     const destPath = path.join(outputFolder, att.name);
@@ -397,5 +441,6 @@ export async function processPCTDocument({ mainPdfPath, attachments, outputFolde
     success: true,
     processedAnnotations: allAnnotations.length,
     notFound,
+    unsupportedPatterns,
   };
 }

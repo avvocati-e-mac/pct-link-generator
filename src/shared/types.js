@@ -59,4 +59,5 @@ export const IPC_CHANNELS = {
  * @property {boolean}  success                - Sempre true (anche con notFound)
  * @property {number}   processedAnnotations   - Numero totale annotazioni aggiunte
  * @property {string[]} notFound               - Etichette non trovate nel PDF
+ * @property {string[]} unsupportedPatterns    - Pattern bis/ter/quater trovati ma non linkati
  */
