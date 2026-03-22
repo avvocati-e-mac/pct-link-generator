@@ -4,13 +4,13 @@ App desktop Electron per aggiungere annotazioni link cliccabili ai PDF degli att
 
 ## Cosa fa
 
-1. Trascini il PDF dell'atto principale (Step 1)
-2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2)
-3. Rivedi il riepilogo nella modale di anteprima prima di confermare
-4. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link cliccabile che apre il file allegato
-5. Salva l'atto modificato e tutti gli allegati nella cartella di output scelta
+1. Trascini il PDF dell'atto principale (Step 1);
+2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2);
+3. Rivedi il riepilogo nella modale di anteprima prima di confermare;
+4. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link cliccabile che apre il file allegato;
+5. Salva l'atto modificato e tutti gli allegati nella cartella di output scelta dall’utente.
 
-**Uso tipico:** avvocati e professionisti che depositano atti telematici PCT.
+**Uso tipico:** avvocati e professionisti che depositano atti telematici del Processo Civile Telematico (PCT).
 
 ## Privacy
 
