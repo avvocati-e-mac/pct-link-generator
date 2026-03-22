@@ -138,6 +138,28 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## Sessione 004 — Prima release beta v0.1.1 (2026-03-22)
+
+### Cosa ho fatto
+- Committato fix PDFString pendente dalla sessione 003
+- Creato `README.md`
+- Aggiornato `DEVLOG.md` e `ARCHITECTURE.md` (pdfjs → mupdf)
+- Bump versione 0.1.0 → 0.1.1
+- Merge `feat/pct-2024-formats` → `master` (--no-ff)
+- Tag `v0.1.1-beta` pushato su GitHub
+- Fix GitHub Actions: `macos-13` → `macos-latest` (runner non più disponibile)
+- Build completata su tutti e 4 i target (macOS ARM, macOS x64, Windows, Linux)
+- GitHub Release v0.1.1-beta pubblicata automaticamente come Pre-release
+
+### Decisioni prese
+- `macos-latest` usato anche per la build x64 (cross-compilazione da ARM)
+- Tag con suffisso `-beta` → `prerelease: true` in automatico nella Action
+
+### Risultato
+**Testato su macOS ARM con successo.**
+
+---
+
 ## Sessione 003 — Fix coordinate (mupdf) + Fix link Acrobat (PDFString) (2026-03-22)
 
 ### Cosa ho fatto
