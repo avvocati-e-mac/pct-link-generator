@@ -5,20 +5,6 @@
  */
 
 /**
- * Prefisso default per le etichette degli allegati (es. "doc.").
- * Importa da qui — non hardcodare nei file.
- * @type {string}
- */
-export const DEFAULT_ATTACHMENT_PREFIX = 'doc.';
-
-/**
- * Separatore default tra prefisso e numero dell'allegato (es. " ").
- * Importa da qui — non hardcodare nei file.
- * @type {string}
- */
-export const DEFAULT_ATTACHMENT_SEPARATOR = ' ';
-
-/**
  * Costanti per i canali IPC.
  * Mai hardcodare queste stringhe nei file — importa sempre da qui.
  *
@@ -31,10 +17,9 @@ export const IPC_CHANNELS = {
 
 /**
  * @typedef {Object} Attachment
- * @property {string}  path        - Percorso assoluto del file allegato
- * @property {string}  name        - Nome file (es. "allegato_1.pdf")
- * @property {string}  label       - Etichetta di ricerca nell'atto (es. "doc. 1")
- * @property {boolean} customLabel - true se l'utente ha modificato manualmente l'etichetta
+ * @property {string} path  - Percorso assoluto del file allegato
+ * @property {string} name  - Nome file (es. "allegato_1.pdf")
+ * @property {string} label - Etichetta di ricerca nell'atto (numero di posizione, es. "1")
  */
 
 /**

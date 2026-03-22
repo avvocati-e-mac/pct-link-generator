@@ -193,19 +193,13 @@ main {
   white-space: nowrap;
 }
 
-.attachment-item .att-label-input {
-  flex: 1;
-  font-size: 12px;
-  padding: 4px 8px;
-  border: 1px solid #cbd5e0;
-  border-radius: 5px;
-  background: #fff;
-  min-width: 80px;
-}
-
-.attachment-item .att-label-input:focus {
-  outline: 2px solid #4a6cf7;
-  border-color: transparent;
+.attachment-item .att-label {
+  font-size: 13px;
+  color: #4a5568;
+  font-weight: 600;
+  min-width: 32px;
+  text-align: center;
+  flex-shrink: 0;
 }
 
 .attachment-controls {
@@ -215,8 +209,7 @@ main {
 }
 
 /* ===== Pulsanti generici ===== */
-.btn-remove,
-.btn-move {
+.btn-remove {
   background: none;
   border: 1px solid #e2e8f0;
   border-radius: 5px;
@@ -231,17 +224,10 @@ main {
   transition: background 0.12s, color 0.12s;
 }
 
-.btn-remove:hover,
-.btn-move:hover {
+.btn-remove:hover {
   background: #fee2e2;
   border-color: #fca5a5;
   color: #dc2626;
-}
-
-.btn-move:hover {
-  background: #eff6ff;
-  border-color: #93c5fd;
-  color: #1d4ed8;
 }
 
 /* ===== Pulsante azione principale ===== */
@@ -299,6 +285,16 @@ main {
 
 .not-found-list li {
   margin-top: 4px;
+}
+
+.status-warning {
+  margin-top: 8px;
+  padding: 10px 14px;
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 6px;
+  color: #92400e;
+  font-size: 13px;
 }
 
 /* ===== Steps ===== */
@@ -367,52 +363,6 @@ main {
 .bulk-remove-row {
   display: flex;
   justify-content: flex-end;
-}
-
-/* ===== Prefisso configurabile ===== */
-.prefix-config {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  align-items: center;
-  background: #f0f4ff;
-  border-radius: 8px;
-  padding: 10px 14px;
-}
-
-.prefix-config-label {
-  font-size: 12px;
-  color: #4a5568;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.prefix-input {
-  font-size: 12px;
-  padding: 4px 8px;
-  border: 1px solid #cbd5e0;
-  border-radius: 5px;
-  background: #fff;
-  width: 60px;
-}
-
-.prefix-input-short {
-  width: 36px;
-  text-align: center;
-}
-
-.prefix-input-num {
-  width: 52px;
-}
-
-.prefix-input:focus {
-  outline: 2px solid #4a6cf7;
-  border-color: transparent;
-}
-
-.checkbox-label {
-  cursor: pointer;
 }
 
 /* ===== Drag handle ===== */

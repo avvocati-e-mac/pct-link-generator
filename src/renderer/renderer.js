@@ -3,8 +3,6 @@
  * Nessun accesso a Node.js o fs. Solo window.electronAPI per comunicare col main.
  */
 
-import { DEFAULT_ATTACHMENT_PREFIX, DEFAULT_ATTACHMENT_SEPARATOR } from '../shared/types.js';
-
 // ===== Stato applicazione =====
 
 /** @type {string|null} Percorso assoluto del PDF atto principale */
@@ -12,11 +10,9 @@ let mainPdfPath = null;
 
 /**
  * @typedef {Object} Attachment
- * @property {string}  path        - Percorso assoluto del file
- * @property {string}  name        - Nome file
- * @property {string}  label       - Etichetta di ricerca (es. "doc. 1")
- * @property {string}  id          - ID univoco per la lista
- * @property {boolean} customLabel - true se l'utente ha modificato manualmente l'etichetta
+ * @property {string} path - Percorso assoluto del file
+ * @property {string} name - Nome file
+ * @property {string} id   - ID univoco per la lista
  */
 
 /** @type {Attachment[]} */
@@ -68,11 +64,6 @@ const btnGenerate         = document.getElementById('btn-generate');
 const btnBack             = document.getElementById('btn-back');
 const bulkRemoveRow       = document.getElementById('bulk-remove-row');
 const btnRemoveSelected   = document.getElementById('btn-remove-selected');
-
-const inputPrefix         = document.getElementById('input-prefix');
-const inputSeparator      = document.getElementById('input-separator');
-const inputStartNum       = document.getElementById('input-start-num');
-const inputUseLetters     = document.getElementById('input-use-letters');
 
 const statusArea          = document.getElementById('status-area');
 const statusMessage       = document.getElementById('status-message');
@@ -194,84 +185,32 @@ inputAttachments.addEventListener('change', () => {
   inputAttachments.value = '';
 });
 
-// ===== Configurazione prefisso =====
-
-/**
- * Costruisce un'etichetta default per un allegato in base alla configurazione corrente.
- *
- * @param {string} prefix     - Prefisso (es. "doc.")
- * @param {string} separator  - Separatore (es. " ")
- * @param {number} startNum   - Numero iniziale (es. 1)
- * @param {boolean} useLetters - Se true usa lettere A, B, C…
- * @param {number} idx        - Indice 0-based nella sequenza dei default
- * @returns {string}
- */
-function buildDefaultLabel(prefix, separator, startNum, useLetters, idx) {
-  const n = useLetters
-    ? String.fromCharCode(65 + (startNum - 1 + idx) % 26)
-    : String(startNum + idx);
-  return `${prefix}${separator}${n}`;
-}
-
-/**
- * Ricalcola le etichette default (non custom) in base alla configurazione corrente del prefisso.
- */
-function applyPrefixConfig() {
-  const prefix    = inputPrefix.value;
-  const separator = inputSeparator.value;
-  const startNum  = Math.max(1, parseInt(inputStartNum.value, 10) || 1);
-  const useLetters = inputUseLetters.checked;
-
-  let defaultCounter = 0;
-  for (const att of attachments) {
-    if (!att.customLabel) {
-      att.label = buildDefaultLabel(prefix, separator, startNum, useLetters, defaultCounter);
-      defaultCounter++;
-    }
-  }
-  renderAttachmentsList();
-}
-
-inputPrefix.addEventListener('input', applyPrefixConfig);
-inputSeparator.addEventListener('input', applyPrefixConfig);
-inputStartNum.addEventListener('input', applyPrefixConfig);
-inputUseLetters.addEventListener('change', applyPrefixConfig);
-
 // ===== Gestione allegati =====
 
 /**
- * Aggiunge un file alla lista allegati con etichetta default.
+ * Aggiunge un file alla lista allegati.
+ * La label viene calcolata automaticamente dalla posizione (idx + 1) al momento
+ * dell'elaborazione — non viene memorizzata nell'oggetto attachment.
  * @param {File} file
  */
 function addAttachment(file) {
-  const prefix     = inputPrefix.value;
-  const separator  = inputSeparator.value;
-  const startNum   = Math.max(1, parseInt(inputStartNum.value, 10) || 1);
-  const useLetters = inputUseLetters.checked;
-
-  // Conta quanti allegati NON-custom ci sono già per calcolare l'indice
-  const defaultCount = attachments.filter(a => !a.customLabel).length;
-
   attachments.push({
-    id: String(nextId++),
+    id:   String(nextId++),
     path: window.electronAPI.getPathForFile(file),
     name: file.name,
-    label: buildDefaultLabel(prefix, separator, startNum, useLetters, defaultCount),
-    customLabel: false,
   });
   renderAttachmentsList();
   updateGenerateButton();
 }
 
 /**
- * Rimuove un allegato per ID. Deseleziona l'ID e rinumera le etichette default.
+ * Rimuove un allegato per ID.
  * @param {string} id
  */
 function removeAttachment(id) {
   attachments = attachments.filter(a => a.id !== id);
   selectedIds.delete(id);
   if (lastClickedId === id) lastClickedId = null;
-  renumberDefaultLabels();
   renderAttachmentsList();
   updateGenerateButton();
   updateBulkRemoveButton();
@@ -284,58 +223,9 @@ function removeSelectedAttachments() {
   attachments = attachments.filter(a => !selectedIds.has(a.id));
   selectedIds.clear();
   lastClickedId = null;
-  renumberDefaultLabels();
   renderAttachmentsList();
   updateGenerateButton();
   updateBulkRemoveButton();
-}
-
-/**
- * Sposta un allegato su o giù nella lista (fallback ▲▼).
- * @param {string} id
- * @param {'up'|'down'} direction
- */
-function moveAttachment(id, direction) {
-  const idx = attachments.findIndex(a => a.id === id);
-  if (idx === -1) return;
-  const newIdx = direction === 'up' ? idx - 1 : idx + 1;
-  if (newIdx < 0 || newIdx >= attachments.length) return;
-  [attachments[idx], attachments[newIdx]] = [attachments[newIdx], attachments[idx]];
-  renumberDefaultLabels();
-  renderAttachmentsList();
-}
-
-/**
- * Aggiorna l'etichetta di ricerca di un allegato.
- * Marca customLabel = true perché l'utente ha modificato manualmente il campo.
- * @param {string} id
- * @param {string} label
- */
-function updateLabel(id, label) {
-  const att = attachments.find(a => a.id === id);
-  if (att) {
-    att.label = label;
-    att.customLabel = true;
-  }
-}
-
-/**
- * Rinumera le etichette default (customLabel !== true) in base alla configurazione corrente.
- * Le etichette modificate manualmente non vengono toccate.
- */
-function renumberDefaultLabels() {
-  const prefix     = inputPrefix.value;
-  const separator  = inputSeparator.value;
-  const startNum   = Math.max(1, parseInt(inputStartNum.value, 10) || 1);
-  const useLetters = inputUseLetters.checked;
-
-  let defaultCounter = 0;
-  for (const att of attachments) {
-    if (!att.customLabel) {
-      att.label = buildDefaultLabel(prefix, separator, startNum, useLetters, defaultCounter);
-      defaultCounter++;
-    }
-  }
 }
 
 // ===== Multi-selezione allegati =====
@@ -448,7 +338,6 @@ function attachDragHandlers(li, handle, id) {
     attachments.splice(newIdx, 0, moved);
 
     draggingId = null;
-    renumberDefaultLabels();
     renderAttachmentsList();
   });
 }
@@ -456,7 +345,8 @@ function attachDragHandlers(li, handle, id) {
 // ===== Renderizzazione lista allegati =====
 
 /**
- * Renderizza la lista allegati nel DOM con drag handle, selezione e controlli.
+ * Renderizza la lista allegati nel DOM con drag handle, numero di posizione e controlli.
+ * Il numero di posizione (1-based) è la label che verrà passata al processore.
  */
 function renderAttachmentsList() {
   attachmentsList.innerHTML = '';
@@ -469,16 +359,8 @@ function renderAttachmentsList() {
     li.innerHTML = `
       <span class="drag-handle" draggable="true" aria-label="Trascina per riordinare">⠿</span>
       <span class="att-name" title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</span>
-      <input
-        type="text"
-        class="att-label-input"
-        value="${escapeHtml(att.label)}"
-        placeholder="es. doc. 1"
-        aria-label="Etichetta di ricerca per ${escapeHtml(att.name)}"
-      />
+      <span class="att-label">${idx + 1}</span>
       <div class="attachment-controls">
-        <button class="btn-move btn-up" aria-label="Sposta su" ${idx === 0 ? 'disabled' : ''}>▲</button>
-        <button class="btn-move btn-down" aria-label="Sposta giù" ${idx === attachments.length - 1 ? 'disabled' : ''}>▼</button>
         <button class="btn-remove btn-del" aria-label="Rimuovi allegato">✕</button>
       </div>
     `;
@@ -486,23 +368,16 @@ function renderAttachmentsList() {
     const handle = li.querySelector('.drag-handle');
     attachDragHandlers(li, handle, att.id);
 
-    // Click sull'elemento per la selezione (esclusi input e pulsanti)
+    // Click sull'elemento per la selezione (esclusi pulsanti e drag handle)
     li.addEventListener('click', (e) => {
       const target = e.target;
-      // Non gestire click su input, pulsanti o drag handle
       if (
-        target.tagName === 'INPUT' ||
         target.tagName === 'BUTTON' ||
         target.classList.contains('drag-handle')
       ) return;
       handleAttachmentClick(att.id, e);
     });
 
-    li.querySelector('.att-label-input').addEventListener('input', (e) => {
-      updateLabel(att.id, e.target.value);
-    });
-    li.querySelector('.btn-up').addEventListener('click', () => moveAttachment(att.id, 'up'));
-    li.querySelector('.btn-down').addEventListener('click', () => moveAttachment(att.id, 'down'));
     li.querySelector('.btn-del').addEventListener('click', () => removeAttachment(att.id));
 
     attachmentsList.appendChild(li);
@@ -526,6 +401,7 @@ btnGenerate.addEventListener('click', () => {
 
 /**
  * Popola e apre la modale di anteprima prima della generazione.
+ * Mostra il numero di posizione come etichetta di ricerca.
  */
 function openPreviewModal() {
   // Popola il nome del file atto principale
@@ -539,7 +415,7 @@ function openPreviewModal() {
     tr.innerHTML = `
       <td>${idx + 1}</td>
       <td title="${escapeHtml(att.name)}">${escapeHtml(att.name)}</td>
-      <td>${escapeHtml(att.label)}</td>
+      <td>${idx + 1}</td>
     `;
     previewTbody.appendChild(tr);
   });
@@ -571,7 +447,12 @@ async function runGeneration() {
   try {
     const result = await window.electronAPI.processPDF({
       mainPdfPath,
-      attachments: attachments.map(a => ({ path: a.path, name: a.name, label: a.label })),
+      // La label è la posizione 1-based come stringa
+      attachments: attachments.map((att, idx) => ({
+        path:  att.path,
+        name:  att.name,
+        label: String(idx + 1),
+      })),
       outputFolder,
     });
 
@@ -587,6 +468,14 @@ async function runGeneration() {
         `File salvati in: ${outputFolder}`
       );
     }
+
+    // Avviso per pattern bis/ter/quater non supportati
+    if (result.unsupportedPatterns && result.unsupportedPatterns.length > 0) {
+      const warning = document.createElement('p');
+      warning.className = 'status-warning';
+      warning.textContent = `⚠️ Attenzione: nell'atto sono presenti riferimenti con numerazione non supportata (es. bis, ter, quater) che non hanno ricevuto un link: ${result.unsupportedPatterns.join(', ')}`;
+      statusArea.appendChild(warning);
+    }
   } catch (err) {
     setStatus('error', `Errore durante l'elaborazione: ${err.message}`);
   } finally {
@@ -598,6 +487,7 @@ async function runGeneration() {
 
 /**
  * Mostra un messaggio di stato.
+ * Rimuove eventuali avvisi bis/ter precedenti prima di impostare il nuovo stato.
  * @param {'info'|'success'|'error'|'warning'} type
  * @param {string} text
  */
@@ -607,6 +497,8 @@ function setStatus(type, text) {
   statusMessage.textContent = text;
   notFoundList.classList.add('hidden');
   notFoundList.innerHTML = '';
+  // Rimuovi eventuali avvisi bis/ter dal ciclo precedente
+  statusArea.querySelectorAll('.status-warning').forEach(el => el.remove());
 }
 
 /**
