@@ -9,6 +9,7 @@ const IPC_CHANNELS = {
   DIALOG_SELECT_FOLDER: 'dialog:selectOutputFolder',
 RENDER_PDF_PAGE:      'render-pdf-page',
   QUIT_APP:             'app:quit',
+  OPEN_PATH:            'shell:openPath',
 };
 
 /**
@@ -56,4 +57,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {Promise<void>}
    */
   quitApp: () => ipcRenderer.invoke(IPC_CHANNELS.QUIT_APP),
+
+  /**
+   * Apre la cartella specificata nel file manager di sistema (Finder/Explorer).
+   *
+   * @param {string} folderPath - Percorso assoluto della cartella
+   * @returns {Promise<void>}
+   */
+  openPath: (folderPath) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PATH, folderPath),
 });

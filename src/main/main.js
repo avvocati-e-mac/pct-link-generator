@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, shell, Notification } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
@@ -103,7 +103,22 @@ function registerIpcHandlers() {
       `[IPC] pdf:process completato: ${result.processedAnnotations} annotazioni, ` +
       `notFound: ${result.notFound.length}`
     );
+    const notifBody = result.notFound.length > 0
+      ? `Completato con avvisi: ${result.notFound.length} etichette non trovate.`
+      : `Completato — ${result.processedAnnotations} annotazioni aggiunte.`;
+    new Notification({ title: 'PCT Link Generator', body: notifBody }).show();
     return result;
+  });
+
+  /**
+   * Apre una cartella nel file manager di sistema (Finder/Explorer).
+   *
+   * @param {Electron.IpcMainInvokeEvent} _event
+   * @param {string} folderPath - Percorso assoluto della cartella da aprire
+   * @returns {Promise<void>}
+   */
+  ipcMain.handle(IPC_CHANNELS.OPEN_PATH, async (_event, folderPath) => {
+    await shell.openPath(folderPath);
   });
 }
 

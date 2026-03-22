@@ -35,6 +35,9 @@ let lastClickedId = null;
 /** @type {string|null} ID dell'allegato in fase di drag */
 let draggingId = null;
 
+/** @type {string|null} Percorso cartella di output dell'ultima elaborazione */
+let lastOutputFolder = null;
+
 // ===== Rilevamento OS (per Cmd vs Ctrl) =====
 const isMac = navigator.platform.includes('Mac');
 
@@ -75,9 +78,11 @@ const inputStartIndex     = document.getElementById('input-start-index');
 const renameSchemeSelect  = document.getElementById('rename-scheme');
 
 const statusArea          = document.getElementById('status-area');
+const progressBar         = document.getElementById('progress-bar');
 const statusMessage       = document.getElementById('status-message');
 const notFoundList        = document.getElementById('not-found-list');
 const statusActions       = document.getElementById('status-actions');
+const btnOpenOutput       = document.getElementById('btn-open-output');
 const btnQuit             = document.getElementById('btn-quit');
 
 const modalPreview        = document.getElementById('modal-preview');
@@ -588,8 +593,11 @@ async function runGeneration() {
   const outputFolder = await window.electronAPI.selectOutputFolder();
   if (!outputFolder) return; // utente ha annullato
 
+  lastOutputFolder = outputFolder;
+
   // 2. Avvia elaborazione
   setStatus('info', 'Elaborazione in corso…');
+  progressBar.classList.remove('hidden');
   btnGenerate.disabled = true;
 
   try {
@@ -610,6 +618,8 @@ async function runGeneration() {
       }),
       outputFolder,
     });
+
+    progressBar.classList.add('hidden');
 
     if (result.notFound.length > 0) {
       setStatus('warning',
@@ -641,6 +651,7 @@ async function runGeneration() {
       statusArea.appendChild(warning);
     }
   } catch (err) {
+    progressBar.classList.add('hidden');
     setStatus('error', `Errore durante l'elaborazione: ${err.message}`);
   } finally {
     updateGenerateButton();
@@ -679,6 +690,12 @@ function showNotFound(labels) {
 
 btnQuit.addEventListener('click', () => {
   window.electronAPI.quitApp();
+});
+
+btnOpenOutput.addEventListener('click', async () => {
+  if (lastOutputFolder) {
+    await window.electronAPI.openPath(lastOutputFolder);
+  }
 });
 
 /**
