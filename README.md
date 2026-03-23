@@ -4,7 +4,9 @@
   <img src="immagini/app-icon.png" alt="PCT Link Generator icon" width="120" />
 </p>
 
-App desktop per aggiungere link cliccabili agli allegati negli atti PCT — creata da un avvocato, con l'aiuto dell'intelligenza artificiale (vibe coding), senza conoscenze di programmazione.
+App desktop per aggiungere link cliccabili agli allegati negli atti PCT (Processo Civile Telematico). 
+
+> L’app è stata creata da un avvocato, con l'aiuto dell'intelligenza artificiale (vibe coding), senza conoscenze di programmazione e viene distrubuita così com’è. Se hai un problema apri un [issue](https://github.com/avvocati-e-mac/pct-link-generator/issues)
 
 <p align="center">
   <img src="immagini/screenshot-step1-dark.jpeg" alt="PCT Link Generator — step 1 dark mode" width="480" />
@@ -31,11 +33,11 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT — crea
 1. Trascini il PDF dell'atto principale (Step 1) — l'app mostra un'anteprima sfogliabile del documento (con pulsanti ‹ / › per navigare le pagine);
 2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2);
 3. Scegli il numero di partenza (default: 1) e, se vuoi, uno schema di rinomina automatica dei file nell'output (es. `01_`, `doc_01_`, `allegato_01_`);
-4. Rivedi il riepilogo nella modale di anteprima prima di confermare;
-5. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link cliccabile che apre il file allegato;
+4. Rivedi il riepilogo nella finestra di anteprima prima di confermare;
+5. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link (relativi al file system) cliccabile che apre il file allegato;
 6. Salva l'atto modificato e tutti gli allegati nella cartella di output scelta.
 
-**Uso tipico:** avvocati e professionisti che depositano atti telematici del Processo Civile Telematico (PCT).
+**Uso tipico:** avvocati e professionisti che depositano atti telematici del _Processo Civile Telematico_ (PCT).
 
 > Per approfondire la tecnica dei collegamenti ipertestuali tra atto e allegati, leggi l'articolo: [**PCT: come fare i collegamenti iper-testuali tra l'atto principale e gli allegati depositati**](https://avvocati-e-mac.it/blog/2015/9/18/pct-come-fare-i-collegamenti-iper-testuali-tra-latto-principale-e-gli-allegati-depositati?rq=collegamenti%20allegati)
 
