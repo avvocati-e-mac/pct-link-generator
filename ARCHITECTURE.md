@@ -39,15 +39,21 @@
 
 Tutti i canali sono definiti come costanti in `src/shared/types.js`. Mai hardcodare le stringhe.
 
-| Canale | Direzione | Payload input | Payload output |
-|--------|-----------|---------------|----------------|
-| `pdf:process` | Renderer → Main | `{ mainPdfPath: string, attachments: Attachment[], outputFolder: string }` | `ProcessResult` |
-| `dialog:selectOutputFolder` | Renderer → Main | nessuno | `string \| null` |
-| `read-pdf-as-base64` | Renderer → Main | `filePath: string` | `{ base64: string }` |
-| `render-pdf-page` | Renderer → Main | `{ filePath: string, pageIndex: number }` | `{ base64: string, totalPages: number }` |
-| `app:quit` | Renderer → Main | nessuno | `void` |
+| Canale | Direzione | Pattern | Payload input | Payload output |
+|--------|-----------|---------|---------------|----------------|
+| `pdf:process` | Renderer → Main | invoke/handle | `{ mainPdfPath, attachments, outputFolder }` | `ProcessResult` |
+| `dialog:selectOutputFolder` | Renderer → Main | invoke/handle | nessuno | `string \| null` |
+| `render-pdf-page` | Renderer → Main | invoke/handle | `{ filePath: string, pageIndex: number }` | `{ base64: string, totalPages: number }` |
+| `app:quit` | Renderer → Main | invoke/handle | nessuno | `void` |
+| `shell:openPath` | Renderer → Main | invoke/handle | `folderPath: string` | `void` |
+| `update:download` | Renderer → Main | invoke/handle | nessuno | `void` |
+| `update:install` | Renderer → Main | invoke/handle | nessuno | `void` |
+| `update:available` | Main → Renderer | webContents.send (push) | `{ version: string }` | — |
+| `update:progress` | Main → Renderer | webContents.send (push) | `{ percent: number }` | — |
+| `update:downloaded` | Main → Renderer | webContents.send (push) | `{}` | — |
 
-Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/response).
+I canali Renderer→Main usano `ipcRenderer.invoke` / `ipcMain.handle` (request/response).
+I canali Main→Renderer usano `mainWindow.webContents.send` / `ipcRenderer.on` (push unidirezionale).
 
 ---
 
@@ -78,16 +84,17 @@ Tutti i canali usano `ipcRenderer.invoke` / `ipcMain.handle` (pattern request/re
 
 | File | Responsabilità |
 |------|----------------|
-| `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC (`pdf:process`, `dialog:selectOutputFolder`, `read-pdf-as-base64`), gestisce lifecycle app. **Nessuna logica PDF.** |
-| `preload.cjs` | Bridge sicuro (CJS — Electron non supporta ESM nel preload). Espone `window.electronAPI` via `contextBridge`: `processPDF`, `selectOutputFolder`, `getPathForFile`, `readPdfAsBase64`, `renderPdfPage`, `quitApp`. |
-| `pdf-processor.js` | Tutta la logica PDF: `checkPdfNativity` (verifica testo estraibile), `findTextCoordinates` (mupdf), `addUnderlineLink` (pdf-lib), `buildRenamedName` / `hasLeadingNumber` (rinomina allegati), `processPCTDocument` (orchestrazione). **Nessun codice Electron.** |
+| `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC, chiama `setupUpdater(mainWindow)` in `ready-to-show`, gestisce lifecycle app. **Nessuna logica PDF.** |
+| `preload.cjs` | Bridge sicuro (CJS — Electron non supporta ESM nel preload). Espone `window.electronAPI` via `contextBridge`: `processPDF`, `selectOutputFolder`, `getPathForFile`, `renderPdfPage`, `quitApp`, `openPath`, `downloadUpdate`, `installUpdate`, `onUpdateEvent`. |
+| `pdf-processor.js` | Tutta la logica PDF: `checkPdfNativity`, `findTextCoordinates` (mupdf), `addUnderlineLink` (pdf-lib), `buildRenamedName` / `hasLeadingNumber`, `processPCTDocument`. **Nessun codice Electron.** |
+| `updater.js` | Auto-update via `electron-updater`. `setupUpdater(win)` configura i listener su `autoUpdater` e avvia `checkForUpdates()` in background. `downloadUpdate()` e `quitAndInstall()` delegano ad `autoUpdater`. Gli eventi di avanzamento vengono inviati al renderer via `webContents.send`. |
 
 ### Packaging
 
 | File | Responsabilità |
 |------|----------------|
-| `electron-builder.config.cjs` | Configurazione electron-builder in formato **CommonJS** (`module.exports`). Il formato ESModule (`.js`) non è supportato correttamente da electron-builder 25.x per la lettura dei campi `icon`. Definisce target DMG (macOS ARM + x64), NSIS (Windows x64), AppImage (Linux x64), icone esplicite per ogni piattaforma. |
-| `.github/workflows/build.yml` | CI/CD: 4 job paralleli (mac-arm, mac-x64, windows, linux) + job `release` che aggrega gli artefatti. Release notes auto-generate dai Conventional Commits (`generate_release_notes: true`) con istruzioni di installazione in coda (`append_body: true`). |
+| `electron-builder.config.cjs` | Configurazione electron-builder (CommonJS). Definisce target DMG (macOS ARM + x64), NSIS (Windows x64), AppImage (Linux x64), icone per piattaforma. Sezione `publish` con `provider: github` + `owner/repo` per electron-updater. |
+| `.github/workflows/build.yml` | CI/CD: 4 job di build paralleli (`--publish always` — electron-builder pubblica gli asset direttamente sulla GitHub Release) + job `release-notes` che appende le istruzioni di installazione macOS via `gh release edit`. |
 
 ---
 

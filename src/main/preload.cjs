@@ -7,9 +7,15 @@ const { contextBridge, ipcRenderer, webUtils } = require('electron');
 const IPC_CHANNELS = {
   PDF_PROCESS:          'pdf:process',
   DIALOG_SELECT_FOLDER: 'dialog:selectOutputFolder',
-RENDER_PDF_PAGE:      'render-pdf-page',
+  RENDER_PDF_PAGE:      'render-pdf-page',
   QUIT_APP:             'app:quit',
   OPEN_PATH:            'shell:openPath',
+  // Auto-update
+  UPDATE_AVAILABLE:     'update:available',
+  UPDATE_PROGRESS:      'update:progress',
+  UPDATE_DOWNLOADED:    'update:downloaded',
+  UPDATE_DOWNLOAD:      'update:download',
+  UPDATE_INSTALL:       'update:install',
 };
 
 /**
@@ -65,4 +71,37 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {Promise<void>}
    */
   openPath: (folderPath) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PATH, folderPath),
+
+  /**
+   * Avvia il download dell'aggiornamento disponibile.
+   * @returns {Promise<void>}
+   */
+  downloadUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_DOWNLOAD),
+
+  /**
+   * Installa l'aggiornamento scaricato e riavvia l'app.
+   * @returns {Promise<void>}
+   */
+  installUpdate: () => ipcRenderer.invoke(IPC_CHANNELS.UPDATE_INSTALL),
+
+  /**
+   * Registra un callback per gli eventi di auto-update.
+   * Il Main Process invia questi eventi tramite webContents.send().
+   *
+   * @param {'available'|'progress'|'downloaded'} event
+   * @param {Function} callback
+   * @returns {Function} Funzione per rimuovere il listener
+   */
+  onUpdateEvent: (event, callback) => {
+    const channelMap = {
+      available:  IPC_CHANNELS.UPDATE_AVAILABLE,
+      progress:   IPC_CHANNELS.UPDATE_PROGRESS,
+      downloaded: IPC_CHANNELS.UPDATE_DOWNLOADED,
+    };
+    const channel = channelMap[event];
+    if (!channel) return () => {};
+    const listener = (_ipcEvent, payload) => callback(payload);
+    ipcRenderer.on(channel, listener);
+    return () => ipcRenderer.removeListener(channel, listener);
+  },
 });

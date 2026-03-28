@@ -198,7 +198,7 @@ npm start
 npm test
 ```
 
-85 test Vitest, tutti verdi.
+93 test Vitest, tutti verdi.
 
 ### Struttura
 
@@ -206,8 +206,9 @@ npm test
 src/
 ├── main/
 │   ├── main.js            # Entry point Electron, IPC handlers
-│   ├── preload.js         # contextBridge → window.electronAPI
-│   └── pdf-processor.js  # Logica PDF (mupdf + pdf-lib)
+│   ├── preload.cjs        # contextBridge → window.electronAPI
+│   ├── pdf-processor.js  # Logica PDF (mupdf + pdf-lib)
+│   └── updater.js         # Auto-update via electron-updater
 ├── renderer/
 │   ├── index.html         # UI multi-step drag & drop
 │   ├── renderer.js        # Logica UI
@@ -215,7 +216,8 @@ src/
 └── shared/
     └── types.js           # Costanti IPC + typedef JSDoc
 tests/
-└── pdf-processor.test.js
+├── pdf-processor.test.js
+└── updater.test.js
 ```
 
 ### Roadmap
@@ -235,6 +237,7 @@ tests/
 - [x] v0.4.3 — Fix ligature tipografiche (fi, fl, ff) con charMap per mapping testo→glyph
 - [x] v0.4.4 — Fix etichette spezzate tra LINE mupdf consecutive (PDF Word giustificato)
 - [x] v0.4.5 — Fix match cross-riga: link su entrambe le righe quando l'etichetta va a capo
+- [x] v0.4.6 — Auto-update: banner notifica aggiornamenti disponibili, download e installazione in-app
 - [ ] Fase 8 — Packaging notarizzato (Apple Developer ID, eliminare workaround xattr)
 
 ### Note tecniche
