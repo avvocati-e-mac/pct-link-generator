@@ -22,6 +22,8 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT (Process
 - [Download](#download)
 - [Installazione su macOS](#installazione-su-macos-dmg)
 - [Installazione su Windows](#installazione-su-windows-exe)
+- [Installazione su Linux](#installazione-su-linux-appimage)
+- [Aggiornamenti automatici](#aggiornamenti-automatici)
 - [Privacy](#privacy)
 - [Logica di ricerca](#logica-di-ricerca)
 - [Per sviluppatori](#per-sviluppatori)
@@ -121,6 +123,44 @@ Il file `.exe` verrà salvato nella cartella Download.
 **5.** L'installazione si avvierà normalmente. Al termine, l'app si apre in automatico.
 
 > Questo avviso compare solo la **prima volta**. Dai successivi avvii l'app si aprirà direttamente.
+
+---
+
+## Installazione su Linux (AppImage)
+
+Scarica il file `.AppImage` dalla tabella Download qui sopra.
+
+**Prima di avviarlo**, devi renderlo eseguibile. Apri il terminale nella cartella dove hai scaricato il file ed esegui:
+
+```bash
+chmod +x PCT-Link-Generator-0.5.4.AppImage
+```
+
+Poi avvialo con:
+
+```bash
+./PCT-Link-Generator-0.5.4.AppImage
+```
+
+In alternativa, puoi rendere il file eseguibile dalla gestione file del tuo desktop environment (click destro → Proprietà → Permessi → "Consenti esecuzione come programma") e poi aprirlo con un doppio clic come qualsiasi altra app.
+
+> L'AppImage è un formato autocontenuto: non richiede installazione e non modifica il sistema. Puoi tenerlo in qualsiasi cartella e spostarlo liberamente.
+
+---
+
+## Aggiornamenti automatici
+
+L'app controlla all'avvio se è disponibile una nuova versione. Se sì, compare un banner nella parte alta della finestra.
+
+**Come funziona per piattaforma:**
+
+| Sistema operativo | Comportamento dopo il download |
+|---|---|
+| 🪟 Windows | Compare il pulsante **"Riavvia ora"** — l'app si riavvia e installa l'aggiornamento automaticamente |
+| 🍎 macOS | Compare il pulsante **"Scarica →"** che apre nel browser il DMG corretto per il tuo Mac (Apple Silicon o Intel). Installalo come hai fatto la prima volta |
+| 🐧 Linux | Compare il pulsante **"Scarica →"** che apre nel browser il nuovo file AppImage. Sostituisci il vecchio file e rendilo eseguibile con `chmod +x` come descritto sopra |
+
+> Su macOS, dopo aver installato il nuovo DMG, ricorda di eseguire nuovamente il comando `xattr` per rimuovere la quarantena prima di avviare la nuova versione.
 
 ---
 
