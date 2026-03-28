@@ -100,3 +100,39 @@ jobs:
         run: npx electron-builder --linux --x64 --publish always --config electron-builder.config.cjs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # ─────────────────────────────────────────
+  # Aggiunge le note di installazione macOS alla Release
+  # Eseguito solo su push di tag, dopo tutti i job di build
+  # ─────────────────────────────────────────
+  release-notes:
+    name: Add macOS install notes
+    needs: [build-mac-arm, build-mac-x64, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Append macOS install instructions to Release
+        run: |
+          NOTES=$(gh release view "${{ github.ref_name }}" --repo avvocati-e-mac/pct-link-generator --json body --jq '.body')
+          APPEND='---
+
+          ## Installazione su macOS
+
+          L'"'"'app non è notarizzata. Prima di avviarla, esegui nel Terminale:
+
+          ```bash
+          sudo xattr -cr /Applications/PCT\ Link\ Generator.app
+          ```
+
+          Questo comando rimuove l'"'"'attributo di quarantena imposto da macOS sui file scaricati da internet.
+
+          > Sostituisci il percorso se hai installato l'"'"'app in una cartella diversa da `/Applications`.'
+
+          gh release edit "${{ github.ref_name }}" \
+            --repo avvocati-e-mac/pct-link-generator \
+            --notes "${NOTES}
+
+          ${APPEND}" \
+            --prerelease=${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

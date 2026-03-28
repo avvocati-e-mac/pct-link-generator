@@ -62,21 +62,6 @@ const config = {
     provider: 'github',
     owner: 'avvocati-e-mac',
     repo: 'pct-link-generator',
-    releaseNotes: [
-      '---',
-      '',
-      '## Installazione su macOS',
-      '',
-      "L'app non è notarizzata. Prima di avviarla, esegui nel Terminale:",
-      '',
-      '```bash',
-      'sudo xattr -cr /Applications/PCT\\ Link\\ Generator.app',
-      '```',
-      '',
-      "Questo comando rimuove l'attributo di quarantena imposto da macOS sui file scaricati da internet.",
-      '',
-      '> Sostituisci il percorso se hai installato l\'app in una cartella diversa da `/Applications`.',
-    ].join('\n'),
   },
 };
 
