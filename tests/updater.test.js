@@ -82,8 +82,11 @@ describe('setupUpdater', () => {
   it('invia UPDATE_DOWNLOADED al renderer', () => {
     const win = makeMockWin();
     setupUpdater(win);
-    mockAutoUpdater.emit('update-downloaded');
-    expect(win.webContents.send).toHaveBeenCalledWith('update:downloaded', {});
+    mockAutoUpdater.emit('update-downloaded', { version: '0.5.3' });
+    expect(win.webContents.send).toHaveBeenCalledWith('update:downloaded', {
+      version: '0.5.3',
+      arch: process.arch,
+    });
   });
 
   it('non invia messaggi IPC se la finestra è già distrutta', () => {

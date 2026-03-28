@@ -60,8 +60,9 @@ export function setupUpdater(win) {
     send(IPC_CHANNELS.UPDATE_PROGRESS, { percent: Math.round(progress.percent) });
   });
 
-  autoUpdater.on('update-downloaded', () => {
-    send(IPC_CHANNELS.UPDATE_DOWNLOADED, {});
+  autoUpdater.on('update-downloaded', (info) => {
+    // Passa arch dal main process (process.arch è affidabile, navigator.userAgent no)
+    send(IPC_CHANNELS.UPDATE_DOWNLOADED, { version: info.version, arch: process.arch });
   });
 
   autoUpdater.on('error', (err) => {

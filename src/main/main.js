@@ -125,6 +125,10 @@ function registerIpcHandlers() {
     await shell.openPath(folderPath);
   });
 
+  ipcMain.handle(IPC_CHANNELS.OPEN_URL, async (_event, url) => {
+    await shell.openExternal(url);
+  });
+
   /**
    * Avvia il download dell'aggiornamento disponibile.
    */

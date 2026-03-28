@@ -5,7 +5,7 @@
 
 // ===== Versione applicazione =====
 // ⚠️ Aggiornare manualmente ad ogni bump di versione in package.json
-const APP_VERSION = '0.5.2';
+const APP_VERSION = '0.5.3';
 
 // ===== Stato applicazione =====
 
@@ -856,12 +856,15 @@ if (window.electronAPI?.onUpdateEvent) {
     btnUpdateDownload.disabled = true;
   });
 
-  // Download completato — imposta solo il flag, non sostituisce il listener
-  window.electronAPI.onUpdateEvent('downloaded', () => {
-    updateBannerText.textContent = 'Aggiornamento pronto — riavvia per installare.';
-    btnUpdateDownload.textContent = 'Riavvia ora';
+  // Download completato — su macOS non notarizzata quitAndInstall() non funziona.
+  // Apriamo invece la pagina release su GitHub con il DMG corretto.
+  window.electronAPI.onUpdateEvent('downloaded', ({ version, arch }) => {
+    updateBannerText.textContent = 'Aggiornamento scaricato — installa il nuovo DMG.';
+    btnUpdateDownload.textContent = 'Scarica DMG →';
     btnUpdateDownload.disabled = false;
     updateReady = true;
+    btnUpdateDownload.dataset.version = version || '';
+    btnUpdateDownload.dataset.arch = arch || '';
   });
 
   // Errore durante il download o verifica aggiornamento
@@ -874,7 +877,15 @@ if (window.electronAPI?.onUpdateEvent) {
 
 btnUpdateDownload.addEventListener('click', async () => {
   if (updateReady) {
-    await window.electronAPI.installUpdate();
+    // Su macOS non notarizzata, quitAndInstall() non funziona (quarantena).
+    // Apri direttamente la pagina della release su GitHub con il DMG.
+    const version = btnUpdateDownload.dataset.version;
+    const arch = btnUpdateDownload.dataset.arch;
+    const base = 'https://github.com/avvocati-e-mac/pct-link-generator/releases/download';
+    const dmgName = arch === 'arm64'
+      ? `PCT-Link-Generator-${version}-arm64.dmg`
+      : `PCT-Link-Generator-${version}.dmg`;
+    await window.electronAPI.openUrl(`${base}/v${version}/${dmgName}`);
     return;
   }
   btnUpdateDownload.disabled = true;

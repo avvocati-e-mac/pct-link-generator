@@ -4,6 +4,44 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.5.3 — Fix auto-update macOS: "Riavvia ora" → "Scarica DMG →" (2026-03-28)
+
+### Cosa ho fatto
+
+`autoUpdater.quitAndInstall()` su macOS con app non notarizzata non funziona: electron-updater estrae lo ZIP in una cartella temp e tenta `app.relaunch()`, ma macOS applica la quarantena al nuovo eseguibile estratto e blocca il relaunch silenziosamente.
+
+**Soluzione:** sostituito il comportamento del pulsante "Riavvia ora" con "Scarica DMG →" che apre direttamente nel browser il DMG corretto per l'arch dell'utente (arm64 o x64), scaricato dalla pagina GitHub Releases. L'utente installa il nuovo DMG esattamente come ha fatto la prima volta.
+
+**Flusso aggiornato:**
+1. Banner: "Nuova versione disponibile" → utente clicca "Aggiorna ora"
+2. Download ZIP in background con barra di progresso
+3. Banner: "Aggiornamento scaricato — installa il nuovo DMG" + pulsante "Scarica DMG →"
+4. Click → si apre nel browser il DMG corretto (arm64 o x64) dalla GitHub Release
+5. Utente installa il DMG → aggiornamento completato
+
+**Arch detection:** `process.arch` dal main process (affidabile), propagato come campo `arch` nel payload `update:downloaded`.
+
+**Nuovo canale IPC:** `shell:openUrl` → `shell.openExternal(url)` nel main process.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `src/shared/types.js` | `OPEN_URL: 'shell:openUrl'` |
+| `src/main/main.js` | Handler `OPEN_URL` con `shell.openExternal` |
+| `src/main/preload.cjs` | `OPEN_URL` nelle costanti + `openUrl()` nel contextBridge |
+| `src/main/updater.js` | Evento `update-downloaded` propaga `{ version, arch: process.arch }` |
+| `src/renderer/renderer.js` | Listener `downloaded` salva version+arch in dataset; click "Scarica DMG →" apre URL GitHub |
+| `tests/updater.test.js` | Test `UPDATE_DOWNLOADED` aggiornato con payload `{ version, arch }` |
+| `package.json` | `version` → `0.5.3` |
+| `README.md` | Link download v0.5.3 + riga roadmap |
+
+### Test
+
+93/93 verdi.
+
+---
+
 ## v0.5.2 — Fix CI: conflitto 422 tra job ARM e Intel (2026-03-28)
 
 ### Cosa ho fatto

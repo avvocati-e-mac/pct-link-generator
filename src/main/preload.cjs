@@ -10,6 +10,7 @@ const IPC_CHANNELS = {
   RENDER_PDF_PAGE:      'render-pdf-page',
   QUIT_APP:             'app:quit',
   OPEN_PATH:            'shell:openPath',
+  OPEN_URL:             'shell:openUrl',
   // Auto-update
   UPDATE_AVAILABLE:     'update:available',
   UPDATE_PROGRESS:      'update:progress',
@@ -72,6 +73,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * @returns {Promise<void>}
    */
   openPath: (folderPath) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PATH, folderPath),
+  openUrl: (url) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_URL, url),
 
   /**
    * Avvia il download dell'aggiornamento disponibile.

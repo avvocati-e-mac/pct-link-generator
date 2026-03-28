@@ -16,6 +16,7 @@ export const IPC_CHANNELS = {
   RENDER_PDF_PAGE:      'render-pdf-page',
   QUIT_APP:             'app:quit',
   OPEN_PATH:            'shell:openPath',
+  OPEN_URL:             'shell:openUrl',
   // Auto-update (Main → Renderer, push)
   UPDATE_AVAILABLE:     'update:available',
   UPDATE_PROGRESS:      'update:progress',
