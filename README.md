@@ -130,17 +130,48 @@ Zero connessioni di rete. Tutto viene elaborato localmente sul tuo computer. GDP
 
 ---
 
+## Problemi noti
+
+### PDF generati da Microsoft Word
+
+Se l'atto è stato scritto in Word ed esportato in PDF, i link potrebbero non venire creati anche quando il testo `doc. 1` o `allegato 1` è visivamente presente nel documento.
+
+**Cause possibili:**
+
+- **Testo in grassetto o corsivo:** Word usa font separati per regular/bold/italic. Se l'etichetta (`doc. 1`) è in grassetto, Word la scrive nel PDF come due span distinti con font diversi. L'app potrebbe non riuscire a ricucire i due span e quindi non trovare il testo completo.
+- **Spazio non-breaking (NBSP):** Word inserisce automaticamente uno spazio non-breaking (`U+00A0`) tra l'abbreviazione e il numero (es. `doc.·1` invece di `doc. 1`) in alcuni stili tipografici. L'estrazione può restituire caratteri diversi da quelli attesi dalla regex.
+- **Metodo di esportazione sbagliato:** se il PDF è stato prodotto con **Microsoft Print to PDF** (driver di stampa) o con **Stampa → Salva come PDF** su macOS, il testo può essere frammentato in modo non estraibile.
+
+**Come esportare correttamente da Word:**
+
+| Metodo | Risultato |
+|---|---|
+| **File → Salva con nome → PDF** (dentro Word, macOS o Windows) | ✅ Consigliato |
+| **File → Esporta → PDF** (dentro Word, macOS) | ✅ Consigliato |
+| Stampa → Salva come PDF (macOS, via CoreGraphics) | ⚠️ Può frammentare il testo |
+| Microsoft Print to PDF (Windows, driver stampante) | ❌ Sconsigliato |
+
+> Se il problema persiste anche con il metodo di export corretto, apri un [issue](https://github.com/avvocati-e-mac/pct-link-generator/issues) allegando (se possibile) un PDF di esempio anonimizzato.
+
+---
+
 ## Logica di ricerca
 
 Il software associa ogni allegato alla sua **posizione** nella lista (partendo dal numero che scegli tu). Per ogni posizione cerca nell'atto tutte le varianti italiane comuni:
 
-- `doc. 1`, `Doc.1`, `DOC. 1`
-- `allegato 1`, `Allegato 1`
-- `documento 1`, `Documento n. 1`
-- `all. 1`, `All. 1`, `att. 1`
-- `allegato n. 1` (con `n.` intermedio tra prefisso e numero)
+| Prefisso riconosciuto | Esempi di match |
+|---|---|
+| `doc.` / `doc` | `doc. 1`, `Doc.1`, `DOC. 1`, `doc 1` |
+| `documento` | `documento 1`, `Documento 1` |
+| `all.` / `all` | `all. 1`, `All.1`, `all 1` |
+| `allegato` | `allegato 1`, `Allegato 1` |
 
-Pattern non supportati (es. `doc. 1bis` senza spazio tra numero e "bis"): vengono rilevati e segnalati con un avviso, così sai quali riferimenti non hanno ricevuto un link.
+Tutte le varianti sopra accettano anche `n.` intermedio tra prefisso e numero:
+- `allegato n. 1`, `doc. n. 1`, `Documento n. 1`
+
+Il confronto è **case-insensitive** e tollera spazi o punti aggiuntivi tra prefisso e numero.
+
+**Pattern non supportati** (es. `doc. 1bis` senza spazio tra numero e "bis"): vengono rilevati e segnalati con un avviso, così sai quali riferimenti non hanno ricevuto un link.
 
 ---
 

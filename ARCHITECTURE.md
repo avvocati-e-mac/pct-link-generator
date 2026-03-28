@@ -166,9 +166,9 @@ UTENTE
                     │     buildSearchRegex(label)
                     │       → Caso A (label solo numero):
                     │           regex con prefisso OBBLIGATORIO:
-                    │           (?:doc\.?|documento|all\.?|allegato|att\.?|…)\s+(?:n\.?\s*)?N(?![a-zA-Z0-9])
+                    │           (?:doc\.?|documento|all\.?|allegato)\s+(?:n\.?\s*)?N(?![a-zA-Z0-9])
                     │           → fa match su "doc. 1", "allegato n. 1", "Documento n. 1"…
-                    │           → NON fa match su "1" isolato, importi, P.IVA
+                    │           → NON fa match su "1" isolato, importi, P.IVA, "att. 1", "ex 1"
                     │       → Caso B (label con prefisso es. "doc. 1"):
                     │           espansione sinonimi via LABEL_SYNONYM_GROUPS
                     │     findTextCoordinates(mainPdfPath, label)
@@ -199,8 +199,9 @@ UTENTE
 ## Logica `buildSearchRegex` (CRITICO)
 
 ```javascript
+// Sinonimi riconosciuti (case-insensitive, punto opzionale sulle abbreviazioni)
 export const LABEL_SYNONYM_GROUPS = [
-  ['doc', 'documento', 'all', 'allegato', 'att', 'attaccato', 'ex'],
+  ['doc', 'documento', 'all', 'allegato'],
 ];
 
 export function buildSearchRegex(label) {
@@ -208,7 +209,7 @@ export function buildSearchRegex(label) {
   // Prefisso OBBLIGATORIO — evita match su numeri isolati nel testo
   if (/^\d+$/.test(label.trim())) {
     const SYNONYMS_PREFIX_REQUIRED =
-      '(?:doc\\.?|documento|all\\.?|allegato|att\\.?|attaccato|ex)\\s+(?:n\\.?\\s*)?';
+      '(?:doc\\.?|documento|all\\.?|allegato)\\s+(?:n\\.?\\s*)?';
     return new RegExp(SYNONYMS_PREFIX_REQUIRED + numEscaped + '(?![a-zA-Z0-9])', 'i');
   }
 
@@ -219,9 +220,21 @@ export function buildSearchRegex(label) {
 }
 ```
 
+**Prefissi riconosciuti:**
+
+| Token nel testo | Pattern regex | Note |
+|---|---|---|
+| `doc` / `doc.` | `doc\.?` | Punto opzionale |
+| `documento` | `documento` | Parola intera |
+| `all` / `all.` | `all\.?` | Punto opzionale |
+| `allegato` | `allegato` | Parola intera |
+
+Tra prefisso e numero è accettato `n.` opzionale: `(?:n\.?\s*)?`
+Il separatore tra token è `[\s.]*` (spazi, punti, niente).
+
 **Esempi Caso A (`"1"`):**
-- ✅ `"doc. 1"`, `"Doc.1"`, `"allegato 1"`, `"Allegato n. 1"`, `"Documento n. 1"`, `"allegato 1 bis"`
-- ❌ `"1"` standalone, `"doc. 11"`, `"1a"`, `"doc. 1bis"`, importi, P.IVA
+- ✅ `"doc. 1"`, `"Doc.1"`, `"DOC. 1"`, `"allegato 1"`, `"Allegato n. 1"`, `"Documento n. 1"`, `"all. 1"`, `"allegato 1 bis"` (spazio prima di "bis")
+- ❌ `"1"` standalone, `"doc. 11"`, `"1a"`, `"doc. 1bis"` (senza spazio), importi, P.IVA, `"att. 1"`, `"ex 1"`
 
 ---
 
