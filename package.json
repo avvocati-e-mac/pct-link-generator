@@ -1,6 +1,6 @@
 {
   "name": "pct-link-generator",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "App desktop per aggiungere annotazioni link ai PDF degli atti PCT",
   "type": "module",
   "main": "src/main/main.js",

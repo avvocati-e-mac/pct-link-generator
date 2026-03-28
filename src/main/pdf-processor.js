@@ -125,7 +125,10 @@ export function buildSearchRegex(label) {
  * Necessario per trovare etichette come "doc. 1" quando il numero è in grassetto.
  *
  * @param {object} page - Pagina mupdf (da doc.loadPage)
- * @returns {Array<{text: string, chars: Array<{c: string, quad: number[]}>}>}
+ * @returns {Array<{text: string, chars: Array<{c: string, quad: number[]}>, charMap: number[]}>}
+ *   charMap[i] = indice in chars corrispondente al carattere i-esimo in text.
+ *   Per i caratteri normali charMap[i] === i. Per le componenti secondarie delle
+ *   ligature (bbox zero), charMap[i] punta all'indice del glyph precedente.
  */
 function extractCharRuns(page) {
   const stext = page.toStructuredText('preserve-whitespace');
@@ -147,19 +150,34 @@ function extractCharRuns(page) {
       // indici:        0      1     2     3     4     5     6     7
       const charYTop    = quad[1]; // ul.y = top del carattere
       const charYBottom = quad[5]; // ll.y = bottom del carattere
+      const charWidth   = Math.abs(quad[2] - quad[0]); // ur.x - ul.x
+
+      // Carattere con bbox larghezza zero = seconda componente di una ligatura mupdf
+      // (es. "fi" → mupdf emette 'f' con bbox pieno, poi 'i' con bbox vuoto).
+      // Lo aggiunge al testo per correttezza Unicode ma NON a chars,
+      // perché non ha coordinate proprie — il bbox è già nel carattere precedente.
+      // charMap traccia quale indice in chars corrisponde ad ogni posizione in text.
+      if (charWidth < 0.5) {
+        if (cur) {
+          cur.text += c;
+          cur.charMap.push(cur.chars.length - 1); // punta all'ultimo char valido
+        }
+        return;
+      }
 
       if (!cur) {
-        cur = { text: '', chars: [], yRef: charYTop };
+        cur = { text: '', chars: [], charMap: [], yRef: charYTop };
       } else {
         // Se la Y è cambiata significativamente (> 2pt), è una nuova riga fisica
         const charH = Math.abs(charYBottom - charYTop);
         if (Math.abs(charYTop - cur.yRef) > Math.max(2, charH * 0.5)) {
           flushCur();
-          cur = { text: '', chars: [], yRef: charYTop };
+          cur = { text: '', chars: [], charMap: [], yRef: charYTop };
         }
       }
 
       cur.text += c;
+      cur.charMap.push(cur.chars.length); // indice del char che stiamo per aggiungere
       cur.chars.push({ c, quad });
     },
   });
@@ -174,20 +192,31 @@ function extractCharRuns(page) {
  * Coordinate mupdf: origine top-left, Y verso il basso (pt).
  * Restituisce { x, y, width, height } nel sistema mupdf.
  *
+ * Il parametro charMap (prodotto da extractCharRuns) mappa ogni indice del testo
+ * all'indice corrispondente in chars. È necessario perché le ligature tipografiche
+ * (fi, fl, ff) producono più codepoint Unicode ma un solo char con coordinate.
+ *
  * @param {string}  runText    - Testo completo del run
  * @param {RegExp}  regex      - Pattern da trovare
  * @param {Array}   chars      - Array di {c, quad} per ogni carattere del run
+ * @param {number[]} charMap   - Mappa indice-testo → indice-chars (gestisce ligature)
  * @returns {{ x: number, y: number, width: number, height: number, matchedText: string } | null}
  */
-function matchBoundsFromChars(runText, regex, chars) {
+function matchBoundsFromChars(runText, regex, chars, charMap) {
   const match = regex.exec(runText);
   if (!match) return null;
-  if (chars.length !== runText.length) return null; // sicurezza: mapping 1:1
+
+  // Sicurezza: charMap deve coprire tutto il testo
+  if (!charMap || charMap.length !== runText.length) return null;
 
   const matchStart = match.index;
   const matchEnd   = matchStart + match[0].length;
-  const matchChars = chars.slice(matchStart, matchEnd);
-  if (matchChars.length === 0) return null;
+
+  // Ricava gli indici in chars per il range del match, deduplicando (ligature)
+  const charIndices = [...new Set(charMap.slice(matchStart, matchEnd))];
+  if (charIndices.length === 0) return null;
+
+  const matchChars = charIndices.map(i => chars[i]);
 
   // quad layout: [ul.x, ul.y, ur.x, ur.y, ll.x, ll.y, lr.x, lr.y]
   // indici:        0      1     2     3     4     5     6     7
@@ -261,7 +290,7 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
       const normalizedText = normalizeRunText(run.text);
       if (!normalizedText.trim() || !regex.test(normalizedText)) continue;
 
-      const bounds = matchBoundsFromChars(normalizedText, regex, run.chars);
+      const bounds = matchBoundsFromChars(normalizedText, regex, run.chars, run.charMap);
       if (!bounds) continue;
 
       results.push({
