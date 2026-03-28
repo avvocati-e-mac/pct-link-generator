@@ -17,6 +17,7 @@ import {
   processPCTDocument,
   LABEL_SYNONYM_GROUPS,
   SYNONYMS_PREFIX_PATTERN,
+  normalizeRunText,
   hasLeadingNumber,
   buildRenamedName,
 } from '../src/main/pdf-processor.js';
@@ -360,5 +361,45 @@ describe('buildRenamedName', () => {
 
   it('schema none (default): ritorna nome originale', () => {
     expect(buildRenamedName('contratto.pdf', 'none', 1, 1)).toBe('contratto.pdf');
+  });
+});
+
+// ===== normalizeRunText — fix issue #1 (PDF da Word) =====
+
+describe('normalizeRunText — caratteri Unicode invisibili da PDF Word', () => {
+  it('converte NBSP (U+00A0) in spazio normale', () => {
+    expect(normalizeRunText('doc.\u00A01')).toBe('doc. 1');
+  });
+
+  it('converte narrow no-break space (U+202F) in spazio', () => {
+    expect(normalizeRunText('allegato\u202F1')).toBe('allegato 1');
+  });
+
+  it('converte soft hyphen (U+00AD) in spazio', () => {
+    expect(normalizeRunText('doc.\u00AD1')).toBe('doc. 1');
+  });
+
+  it('converte zero-width space (U+200B) in spazio', () => {
+    expect(normalizeRunText('allegato\u200B1')).toBe('allegato 1');
+  });
+
+  it('preserva la lunghezza del testo (mapping 1:1 con chars)', () => {
+    const input = 'doc.\u00A01';
+    const output = normalizeRunText(input);
+    expect(output.length).toBe(input.length);
+  });
+
+  it('buildSearchRegex trova match su testo con NBSP normalizzato', () => {
+    const regex = buildSearchRegex('1');
+    expect(regex.test(normalizeRunText('allegato\u00A01'))).toBe(true);
+  });
+
+  it('buildSearchRegex trova match su "doc. 1" con NBSP normalizzato', () => {
+    const regex = buildSearchRegex('1');
+    expect(regex.test(normalizeRunText('doc.\u00A01'))).toBe(true);
+  });
+
+  it('non altera testo normale già corretto', () => {
+    expect(normalizeRunText('doc. 1 allegato')).toBe('doc. 1 allegato');
   });
 });

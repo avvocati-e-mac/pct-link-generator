@@ -120,11 +120,15 @@ export function buildSearchRegex(label) {
  * Raggruppa i caratteri in "run" fisici: spezza quando la Y cambia
  * (paragrafo che va a capo = char con Y diversa nella stessa line mupdf).
  *
+ * Usa 'preserve-whitespace' senza 'preserve-spans': mupdf unisce span contigui
+ * sulla stessa riga anche se hanno font diversi (es. regular + bold in Word).
+ * Necessario per trovare etichette come "doc. 1" quando il numero è in grassetto.
+ *
  * @param {object} page - Pagina mupdf (da doc.loadPage)
  * @returns {Array<{text: string, chars: Array<{c: string, quad: number[]}>}>}
  */
 function extractCharRuns(page) {
-  const stext = page.toStructuredText('preserve-whitespace,preserve-spans');
+  const stext = page.toStructuredText('preserve-whitespace');
   const runs  = [];
   let cur     = null;
 
@@ -202,6 +206,26 @@ function matchBoundsFromChars(runText, regex, chars) {
 }
 
 /**
+ * Normalizza caratteri Unicode "invisibili" nel testo estratto da PDF.
+ * Converte varianti di spazio in spazio normale per gestire PDF da Word
+ * che usano NBSP (U+00A0) tra abbreviazioni e numeri (es. "doc.·1").
+ *
+ * La sostituzione è sempre 1:1 (non rimuove caratteri) per preservare
+ * il mapping tra run.text e run.chars usato in matchBoundsFromChars.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function normalizeRunText(text) {
+  return text
+    .replace(/\u00A0/g, ' ')   // Non-breaking space → spazio normale
+    .replace(/\u00AD/g, ' ')   // Soft hyphen → spazio
+    .replace(/\u200B/g, ' ')   // Zero-width space → spazio
+    .replace(/\u202F/g, ' ')   // Narrow no-break space → spazio
+    .replace(/\u2009/g, ' ');  // Thin space → spazio
+}
+
+/**
  * Trova le coordinate di tutti i match di un'etichetta nel PDF.
  * Usa mupdf per l'estrazione testo con coordinate per-carattere (stext.walk).
  *
@@ -234,9 +258,10 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
     const runs = extractCharRuns(page);
 
     for (const run of runs) {
-      if (!run.text.trim() || !regex.test(run.text)) continue;
+      const normalizedText = normalizeRunText(run.text);
+      if (!normalizedText.trim() || !regex.test(normalizedText)) continue;
 
-      const bounds = matchBoundsFromChars(run.text, regex, run.chars);
+      const bounds = matchBoundsFromChars(normalizedText, regex, run.chars);
       if (!bounds) continue;
 
       results.push({
