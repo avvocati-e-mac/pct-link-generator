@@ -129,6 +129,8 @@ function registerIpcHandlers() {
     await shell.openExternal(url);
   });
 
+  ipcMain.handle(IPC_CHANNELS.GET_APP_VERSION, () => app.getVersion());
+
   /**
    * Avvia il download dell'aggiornamento disponibile.
    */

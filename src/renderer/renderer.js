@@ -3,10 +3,6 @@
  * Nessun accesso a Node.js o fs. Solo window.electronAPI per comunicare col main.
  */
 
-// ===== Versione applicazione =====
-// ⚠️ Aggiornare manualmente ad ogni bump di versione in package.json
-const APP_VERSION = '0.5.3';
-
 // ===== Stato applicazione =====
 
 /** @type {string|null} Percorso assoluto del PDF atto principale */
@@ -139,7 +135,9 @@ function initTheme() {
 initTheme();
 
 // ===== Badge versione =====
-if (versionBadge) versionBadge.textContent = 'v' + APP_VERSION;
+if (versionBadge) {
+  window.electronAPI.getAppVersion().then((v) => { versionBadge.textContent = 'v' + v; });
+}
 
 // ===== Schermata introduttiva =====
 /**
@@ -856,15 +854,20 @@ if (window.electronAPI?.onUpdateEvent) {
     btnUpdateDownload.disabled = true;
   });
 
-  // Download completato — su macOS non notarizzata quitAndInstall() non funziona.
-  // Apriamo invece la pagina release su GitHub con il DMG corretto.
-  window.electronAPI.onUpdateEvent('downloaded', ({ version, arch }) => {
-    updateBannerText.textContent = 'Aggiornamento scaricato — installa il nuovo DMG.';
-    btnUpdateDownload.textContent = 'Scarica DMG →';
+  // Download completato.
+  // Windows: quitAndInstall() funziona → mostra "Riavvia ora".
+  // macOS/Linux: apri browser con pacchetto diretto (quarantena macOS blocca quitAndInstall).
+  window.electronAPI.onUpdateEvent('downloaded', ({ version, arch, platform }) => {
+    const label = platform === 'win32'
+      ? 'Aggiornamento scaricato — riavvia per installare.'
+      : 'Aggiornamento scaricato — installa il nuovo pacchetto.';
+    updateBannerText.textContent = label;
+    btnUpdateDownload.textContent = platform === 'win32' ? 'Riavvia ora' : 'Scarica →';
     btnUpdateDownload.disabled = false;
     updateReady = true;
-    btnUpdateDownload.dataset.version = version || '';
-    btnUpdateDownload.dataset.arch = arch || '';
+    btnUpdateDownload.dataset.version  = version  || '';
+    btnUpdateDownload.dataset.arch     = arch     || '';
+    btnUpdateDownload.dataset.platform = platform || '';
   });
 
   // Errore durante il download o verifica aggiornamento
@@ -877,15 +880,28 @@ if (window.electronAPI?.onUpdateEvent) {
 
 btnUpdateDownload.addEventListener('click', async () => {
   if (updateReady) {
-    // Su macOS non notarizzata, quitAndInstall() non funziona (quarantena).
-    // Apri direttamente la pagina della release su GitHub con il DMG.
-    const version = btnUpdateDownload.dataset.version;
-    const arch = btnUpdateDownload.dataset.arch;
+    const version  = btnUpdateDownload.dataset.version;
+    const arch     = btnUpdateDownload.dataset.arch;
+    const platform = btnUpdateDownload.dataset.platform;
+
+    if (platform === 'win32') {
+      // Windows: quitAndInstall() funziona correttamente
+      await window.electronAPI.installUpdate();
+      return;
+    }
+
+    // macOS e Linux: apri browser con pacchetto diretto
     const base = 'https://github.com/avvocati-e-mac/pct-link-generator/releases/download';
-    const dmgName = arch === 'arm64'
-      ? `PCT-Link-Generator-${version}-arm64.dmg`
-      : `PCT-Link-Generator-${version}.dmg`;
-    await window.electronAPI.openUrl(`${base}/v${version}/${dmgName}`);
+    let filename;
+    if (platform === 'darwin') {
+      filename = arch === 'arm64'
+        ? `PCT-Link-Generator-${version}-arm64.dmg`
+        : `PCT-Link-Generator-${version}.dmg`;
+    } else {
+      // linux
+      filename = `PCT-Link-Generator-${version}.AppImage`;
+    }
+    await window.electronAPI.openUrl(`${base}/v${version}/${filename}`);
     return;
   }
   btnUpdateDownload.disabled = true;

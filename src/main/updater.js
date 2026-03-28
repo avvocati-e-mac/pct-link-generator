@@ -61,8 +61,8 @@ export function setupUpdater(win) {
   });
 
   autoUpdater.on('update-downloaded', (info) => {
-    // Passa arch dal main process (process.arch è affidabile, navigator.userAgent no)
-    send(IPC_CHANNELS.UPDATE_DOWNLOADED, { version: info.version, arch: process.arch });
+    // Passa arch e platform dal main process (affidabili; navigator.userAgent no)
+    send(IPC_CHANNELS.UPDATE_DOWNLOADED, { version: info.version, arch: process.arch, platform: process.platform });
   });
 
   autoUpdater.on('error', (err) => {

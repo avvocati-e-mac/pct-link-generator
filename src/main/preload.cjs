@@ -74,6 +74,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
    */
   openPath: (folderPath) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_PATH, folderPath),
   openUrl: (url) => ipcRenderer.invoke(IPC_CHANNELS.OPEN_URL, url),
+  getAppVersion: () => ipcRenderer.invoke(IPC_CHANNELS.GET_APP_VERSION),
 
   /**
    * Avvia il download dell'aggiornamento disponibile.

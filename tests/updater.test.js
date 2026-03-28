@@ -79,13 +79,14 @@ describe('setupUpdater', () => {
     expect(win.webContents.send).toHaveBeenCalledWith('update:progress', { percent: 46 });
   });
 
-  it('invia UPDATE_DOWNLOADED al renderer', () => {
+  it('invia UPDATE_DOWNLOADED al renderer con arch e platform', () => {
     const win = makeMockWin();
     setupUpdater(win);
-    mockAutoUpdater.emit('update-downloaded', { version: '0.5.3' });
+    mockAutoUpdater.emit('update-downloaded', { version: '0.5.4' });
     expect(win.webContents.send).toHaveBeenCalledWith('update:downloaded', {
-      version: '0.5.3',
+      version: '0.5.4',
       arch: process.arch,
+      platform: process.platform,
     });
   });
 

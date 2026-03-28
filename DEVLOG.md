@@ -4,6 +4,50 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.5.4 — Fix auto-update platform-aware + APP_VERSION via IPC (2026-03-28)
+
+### Cosa ho fatto
+
+**Fix auto-update per piattaforma:**
+Il payload `update:downloaded` non conteneva `platform`, il renderer assumeva sempre macOS
+e mostrava "Scarica DMG →" anche su Windows e Linux.
+
+Aggiunto `platform: process.platform` al payload in `updater.js`. Nel renderer:
+- `win32` → "Riavvia ora" → `quitAndInstall()` (funziona su Windows)
+- `darwin` → "Scarica →" → apre browser con link DMG corretto (arm64 o x64)
+- `linux` → "Scarica →" → apre browser con link AppImage
+
+**APP_VERSION via IPC:**
+Rimossa la costante `APP_VERSION = '0.5.3'` hardcodata in `renderer.js`. Il badge versione
+nell'header ora legge `app.getVersion()` via IPC (`app:getVersion`), che mappa direttamente
+il campo `version` in `package.json`. Unica source of truth.
+
+### Decisioni prese
+
+- Un solo bump v0.5.4 per entrambe le fix (strettamente correlate: entrambe migliorano
+  la gestione della versione e del ciclo di aggiornamento)
+- Pattern `.then()` nel renderer per il badge: giustificato perché la Promise si risolve
+  prima del primo frame visibile e non ha dipendenze da altro codice
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `src/main/updater.js` | Aggiunto `platform: process.platform` al payload `UPDATE_DOWNLOADED` |
+| `src/renderer/renderer.js` | Listener `downloaded`: salva platform nel dataset, label dinamica; click handler: branch per platform; rimossa `APP_VERSION`; badge via `getAppVersion()` |
+| `src/main/main.js` | Handler `GET_APP_VERSION` → `app.getVersion()` |
+| `src/main/preload.cjs` | Esposto `getAppVersion()` nel contextBridge |
+| `src/shared/types.js` | Aggiunta costante `GET_APP_VERSION: 'app:getVersion'` |
+| `tests/updater.test.js` | Aggiornata assertion `UPDATE_DOWNLOADED` con `platform: process.platform` |
+| `package.json` | `version` → `0.5.4` |
+| `README.md` | Link download v0.5.4, roadmap aggiornata |
+
+### Risultato test
+
+93/93 test verdi.
+
+---
+
 ## v0.5.3 — Fix auto-update macOS: "Riavvia ora" → "Scarica DMG →" (2026-03-28)
 
 ### Cosa ho fatto
