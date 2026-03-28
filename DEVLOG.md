@@ -4,6 +4,59 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.4.6 — Auto-update via electron-updater + GitHub Releases (2026-03-28)
+
+### Cosa ho fatto
+
+Implementato aggiornamento automatico dell'app tramite `electron-updater` 6.x e GitHub Releases.
+
+**Architettura:**
+- `src/main/updater.js` (nuovo): `setupUpdater(win)` configura `autoUpdater` con `autoDownload: false`, registra i listener su `update-available`, `download-progress`, `update-downloaded` e li propaga al renderer via `webContents.send`. `downloadUpdate()` e `quitAndInstall()` delegano ad `autoUpdater`.
+- 5 nuovi canali IPC in `types.js` e `preload.cjs`: 3 push (Main→Renderer: `update:available`, `update:progress`, `update:downloaded`) e 2 invoke (Renderer→Main: `update:download`, `update:install`).
+- Banner UI fisso bottom-right in `index.html` + `style.css`: 3 stati visivi (disponibile → progresso % → pronto per installare), pulsante dismiss ✕.
+- `setupUpdater(mainWindow)` chiamato in `ready-to-show` di `main.js`.
+- `electron-builder.config.cjs`: aggiunta sezione `publish` con `provider: github`, `owner: avvocati-e-mac`, `repo: pct-link-generator`.
+- CI (`build.yml`): `--publish always` nei 4 job di build + `GITHUB_TOKEN` iniettato → electron-builder pubblica i file sulla GitHub Release direttamente. Job `release-notes` separato appende le istruzioni macOS via `gh release edit`.
+- `tests/updater.test.js` (nuovo): 8 test con mock `vi.hoisted` di `electron-updater` e stub minimale di `electron`.
+
+### Decisioni prese
+
+1. **`autoDownload: false`:** il download non parte in automatico — l'utente deve cliccare "Aggiorna ora". Scelta conservativa per utenti non tecnici che potrebbero non aspettarsi riavvii improvvisi.
+
+2. **`autoInstallOnAppQuit: true`:** se l'utente ignora il banner ma l'aggiornamento è già scaricato, viene installato alla chiusura normale dell'app. Comportamento trasparente e non invasivo.
+
+3. **`electron-updater` import come default export:** il pacchetto è CJS e non supporta named exports in ESM. `import pkg from 'electron-updater'; const { autoUpdater } = pkg;` — documentato nel file con un commento.
+
+4. **`autoUpdater.removeAllListeners()` in `setupUpdater`:** evita accumulo di listener se la funzione venisse chiamata più volte (es. in dev con hot-reload).
+
+5. **Flag `updateReady` invece di `onclick` per il pulsante "Riavvia ora":** assegnare `onclick` dopo l'evento `downloaded` non rimuoveva il `addEventListener` precedente — doppio handler. Soluzione: un unico listener che brancha su `updateReady`.
+
+6. **CI semplificata:** rimosso il job `softprops/action-gh-release` che conflittava con `--publish always` di electron-builder (entrambi tentavano di creare/aggiornare la stessa Release → `already_exists`). Sostituito con `gh release edit` nel job `release-notes`.
+
+7. **`owner: avvocati-e-mac`:** il repo è sotto l'organizzazione, non l'utente personale. Errore 404 scoperto durante il test CI beta.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `src/main/updater.js` | **NUOVO** |
+| `src/main/main.js` | import updater + setupUpdater + 2 handler IPC |
+| `src/main/preload.cjs` | +3 metodi update + onUpdateEvent |
+| `src/shared/types.js` | +5 canali IPC update |
+| `src/renderer/index.html` | banner HTML |
+| `src/renderer/style.css` | stili banner |
+| `src/renderer/renderer.js` | logica banner + fix doppio handler |
+| `electron-builder.config.cjs` | sezione publish github |
+| `.github/workflows/build.yml` | --publish always + job release-notes |
+| `package.json` / `package-lock.json` | electron-updater ^6.8.3 |
+| `tests/updater.test.js` | **NUOVO** — 8 test |
+
+### Test
+
+93/93 verdi (85 PDF processor + 8 updater). La CI beta `v0.4.6-beta.0` ha verificato che tutti e 4 i job di build completano e la Release viene pubblicata correttamente con `latest-mac.yml`.
+
+---
+
 ## v0.4.5 — Fix match cross-riga: etichetta spezzata su due righe fisiche (2026-03-28)
 
 ### Cosa ho fatto
