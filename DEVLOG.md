@@ -4,6 +4,46 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.5.1 — Fix auto-update macOS: ZIP target + propagazione errori (2026-03-28)
+
+### Cosa ho fatto
+
+**Causa root identificata:** su macOS, electron-updater usa il file **ZIP** per gli aggiornamenti in-place, non il DMG. Il DMG è solo per l'installazione iniziale. L'app generava solo DMG → electron-updater scaricava il DMG, tentava la verifica firma (codesign), falliva perché l'app non è notarizzata, emetteva l'evento `error`. La Promise di `downloadUpdate()` però non veniva rigettata (electron-updater emette un evento `error` anziché rigettare la Promise) → il renderer non sapeva che era fallito e il banner rimaneva bloccato su "Download in corso…".
+
+**Fix 1 — `electron-builder.config.cjs`:** aggiunto `zip` come target macOS accanto a `dmg`. La prossima build genererà `PCT-Link-Generator-X.Y.Z-arm64.zip` e `PCT-Link-Generator-X.Y.Z.zip` che electron-updater userà per gli aggiornamenti.
+
+**Fix 2 — `src/main/updater.js`:** il listener `error` ora propaga l'errore al renderer via `IPC_CHANNELS.UPDATE_ERROR` e rigetta la Promise corrente di `downloadUpdate()` tramite `_downloadReject`.
+
+**Fix 3 — `src/shared/types.js`:** aggiunto canale `UPDATE_ERROR: 'update:error'`.
+
+**Fix 4 — `src/main/preload.cjs`:** aggiunto `UPDATE_ERROR` alle costanti inline e `error` nel `channelMap` di `onUpdateEvent`.
+
+**Fix 5 — `src/renderer/renderer.js`:** aggiunto listener `onUpdateEvent('error', ...)` che ripristina il banner allo stato iniziale con il messaggio di errore.
+
+### Decisioni prese
+
+- **ZIP + DMG in parallelo** invece di ZIP-only: il DMG resta per l'installazione iniziale (esperienza migliore per l'utente), il ZIP viene usato da electron-updater per gli aggiornamenti in-place.
+- **`_downloadReject` come closure** invece di rigettare direttamente: electron-updater emette `error` come evento asincrono separato dalla Promise di `downloadUpdate()`, quindi serve un riferimento esterno per rigettare la Promise corrente.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `electron-builder.config.cjs` | Aggiunto `{ target: 'zip', arch: ['arm64', 'x64'] }` in target macOS |
+| `src/shared/types.js` | Aggiunto `UPDATE_ERROR: 'update:error'` |
+| `src/main/updater.js` | `_downloadReject`, listener `error` propaga IPC + rigetta Promise, `downloadUpdate()` wrappata in Promise esplicita |
+| `src/main/preload.cjs` | `UPDATE_ERROR` nelle costanti + `error` in `channelMap` |
+| `src/renderer/renderer.js` | Listener `onUpdateEvent('error', ...)` + bump `APP_VERSION` → `0.5.1` |
+| `src/renderer/index.html` | Badge statico → `v0.5.1` |
+| `package.json` | `version` → `0.5.1` |
+| `README.md` | Link download v0.5.1 + riga roadmap |
+
+### Test
+
+93/93 verdi.
+
+---
+
 ## v0.5.0 — Badge versione + schermata introduttiva + link download in release (2026-03-28)
 
 ### Cosa ho fatto

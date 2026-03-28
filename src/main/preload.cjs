@@ -14,6 +14,7 @@ const IPC_CHANNELS = {
   UPDATE_AVAILABLE:     'update:available',
   UPDATE_PROGRESS:      'update:progress',
   UPDATE_DOWNLOADED:    'update:downloaded',
+  UPDATE_ERROR:         'update:error',
   UPDATE_DOWNLOAD:      'update:download',
   UPDATE_INSTALL:       'update:install',
 };
@@ -88,7 +89,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
    * Registra un callback per gli eventi di auto-update.
    * Il Main Process invia questi eventi tramite webContents.send().
    *
-   * @param {'available'|'progress'|'downloaded'} event
+   * @param {'available'|'progress'|'downloaded'|'error'} event
    * @param {Function} callback
    * @returns {Function} Funzione per rimuovere il listener
    */
@@ -97,6 +98,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
       available:  IPC_CHANNELS.UPDATE_AVAILABLE,
       progress:   IPC_CHANNELS.UPDATE_PROGRESS,
       downloaded: IPC_CHANNELS.UPDATE_DOWNLOADED,
+      error:      IPC_CHANNELS.UPDATE_ERROR,
     };
     const channel = channelMap[event];
     if (!channel) return () => {};

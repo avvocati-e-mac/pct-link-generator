@@ -20,6 +20,7 @@ export const IPC_CHANNELS = {
   UPDATE_AVAILABLE:     'update:available',
   UPDATE_PROGRESS:      'update:progress',
   UPDATE_DOWNLOADED:    'update:downloaded',
+  UPDATE_ERROR:         'update:error',
   // Auto-update (Renderer → Main, invoke)
   UPDATE_DOWNLOAD:      'update:download',
   UPDATE_INSTALL:       'update:install',

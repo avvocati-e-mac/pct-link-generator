@@ -5,7 +5,7 @@
 
 // ===== Versione applicazione =====
 // ⚠️ Aggiornare manualmente ad ogni bump di versione in package.json
-const APP_VERSION = '0.5.0';
+const APP_VERSION = '0.5.1';
 
 // ===== Stato applicazione =====
 
@@ -862,6 +862,13 @@ if (window.electronAPI?.onUpdateEvent) {
     btnUpdateDownload.textContent = 'Riavvia ora';
     btnUpdateDownload.disabled = false;
     updateReady = true;
+  });
+
+  // Errore durante il download o verifica aggiornamento
+  window.electronAPI.onUpdateEvent('error', () => {
+    updateBannerText.textContent = 'Errore durante il download. Riprova più tardi.';
+    btnUpdateDownload.textContent = 'Aggiorna ora';
+    btnUpdateDownload.disabled = false;
   });
 }
 

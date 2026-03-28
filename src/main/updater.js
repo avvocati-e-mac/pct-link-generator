@@ -18,6 +18,9 @@ import { IPC_CHANNELS } from '../shared/types.js';
 /** @type {Electron.BrowserWindow | null} */
 let _win = null;
 
+/** @type {((err: Error) => void) | null} Rigetta la Promise di downloadUpdate() corrente */
+let _downloadReject = null;
+
 /**
  * Invia un evento IPC al renderer (se la finestra è ancora aperta).
  *
@@ -62,8 +65,14 @@ export function setupUpdater(win) {
   });
 
   autoUpdater.on('error', (err) => {
-    // Log solo il codice/messaggio — mai dati utente
     console.error(`[updater] errore: ${err.message}`);
+    // Propaga l'errore al renderer (mostra messaggio nel banner)
+    send(IPC_CHANNELS.UPDATE_ERROR, { message: err.message });
+    // Rigetta la Promise di downloadUpdate() se è in corso un download
+    if (_downloadReject) {
+      _downloadReject(err);
+      _downloadReject = null;
+    }
   });
 
   // Controlla in background — non blocca l'avvio
@@ -79,7 +88,12 @@ export function setupUpdater(win) {
  * @returns {Promise<void>}
  */
 export async function downloadUpdate() {
-  await autoUpdater.downloadUpdate();
+  return new Promise((resolve, reject) => {
+    _downloadReject = reject;
+    autoUpdater.downloadUpdate()
+      .then(() => { _downloadReject = null; resolve(); })
+      .catch((err) => { _downloadReject = null; reject(err); });
+  });
 }
 
 /**

@@ -24,8 +24,12 @@ const config = {
   mac: {
     category: 'public.app-category.productivity',
     icon: 'build-resources/icon.icns',
+    // DMG per l'installazione manuale + ZIP obbligatorio per electron-updater.
+    // Su macOS, electron-updater usa il ZIP per gli aggiornamenti in-place;
+    // il solo DMG fallirebbe la verifica firma sulle app non notarizzate.
     target: [
       { target: 'dmg', arch: ['arm64', 'x64'] },
+      { target: 'zip', arch: ['arm64', 'x64'] },
     ],
     identity: null,
   },
