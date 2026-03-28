@@ -233,6 +233,7 @@ tests/
 - [x] Fase 7b — UI polish: layout 2 colonne responsive nello step 1, anteprima PDF a tutta larghezza, pulsanti step 2 e 3 riposizionati, step 3 con pulsante ← Indietro
 - [x] v0.4.2 — Fix compatibilità PDF da Word: span multi-font uniti, normalizzazione NBSP
 - [x] v0.4.3 — Fix ligature tipografiche (fi, fl, ff) con charMap per mapping testo→glyph
+- [x] v0.4.4 — Fix etichette spezzate tra LINE mupdf consecutive (PDF Word giustificato)
 - [ ] Fase 8 — Packaging notarizzato (Apple Developer ID, eliminare workaround xattr)
 
 ### Note tecniche

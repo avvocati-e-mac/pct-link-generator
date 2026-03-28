@@ -143,8 +143,6 @@ function extractCharRuns(page) {
   stext.walk({
     beginTextBlock() { flushCur(); },
     endTextBlock()   { flushCur(); },
-    beginLine()      { flushCur(); },
-    endLine()        { flushCur(); },
     onChar(c, origin, font, size, quad) {
       // quad layout: [ul.x, ul.y, ur.x, ur.y, ll.x, ll.y, lr.x, lr.y]
       // indici:        0      1     2     3     4     5     6     7

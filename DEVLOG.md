@@ -4,6 +4,30 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.4.4 — Fix run spezzati tra LINE mupdf (2026-03-28)
+
+### Cosa ho fatto
+
+Rimosso `beginLine()` e `endLine()` da `stext.walk()` in `extractCharRuns`.
+I due callback chiamavano `flushCur()` ad ogni confine di LINE mupdf, spezzando
+le etichette che cadevano a cavallo di due LINE consecutive (anche se visivamente
+sulla stessa riga).
+
+### Decisione
+
+La logica di cambio Y già presente in `onChar` è sufficiente a separare righe
+di testo distinte. `beginTextBlock`/`endTextBlock` garantiscono la separazione
+tra paragrafi. I callback `beginLine`/`endLine` erano ridondanti e causavano
+false spaccature in PDF Word con layout giustificato.
+
+### Test
+
+85/85 verdi. Il caso con LINE mupdf multiple sulla stessa riga visiva non è
+simulabile con pdf-lib (no ligature, sempre una LINE per riga) — la verifica
+definitiva avviene con il PDF Word reale dell'utente.
+
+---
+
 ## Fase 1 — Analisi e pianificazione (2026-03-22)
 
 ### Cosa ho fatto
