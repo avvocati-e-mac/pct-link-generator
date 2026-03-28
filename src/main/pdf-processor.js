@@ -233,6 +233,29 @@ function matchBoundsFromChars(runText, regex, chars, charMap) {
 }
 
 /**
+ * Calcola il bounding box per un range di caratteri di un run.
+ * Usata per estrarre il bbox del frammento di un run che partecipa
+ * a un match cross-riga (etichetta spezzata su due righe fisiche).
+ *
+ * @param {Array<{c: string, quad: number[]}>} chars
+ * @param {number[]} charMap  - Mappa indice-testo → indice-chars
+ * @param {number}   start    - Indice inizio nel testo del run (incluso)
+ * @param {number}   end      - Indice fine nel testo del run (escluso)
+ * @returns {{ x: number, y: number, width: number, height: number } | null}
+ */
+function matchBoundsInRange(chars, charMap, start, end) {
+  if (start >= end || !charMap || end > charMap.length) return null;
+  const charIndices = [...new Set(charMap.slice(start, end))];
+  if (charIndices.length === 0) return null;
+  const matchChars = charIndices.map(i => chars[i]);
+  const x      = matchChars[0].quad[0];
+  const xRight = matchChars[matchChars.length - 1].quad[2];
+  const yTop   = Math.min(...matchChars.map(ch => ch.quad[1]));
+  const yBottom= Math.max(...matchChars.map(ch => ch.quad[5]));
+  return { x, y: yTop, width: xRight - x, height: yBottom - yTop };
+}
+
+/**
  * Normalizza caratteri Unicode "invisibili" nel testo estratto da PDF.
  * Converte varianti di spazio in spazio normale per gestire PDF da Word
  * che usano NBSP (U+00A0) tra abbreviazioni e numeri (es. "doc.·1").
@@ -284,6 +307,7 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
     const page = mupdfDoc.loadPage(pageIndex);
     const runs = extractCharRuns(page);
 
+    // Passaggio 1: match per-run (caso normale — etichetta sulla stessa riga)
     for (const run of runs) {
       const normalizedText = normalizeRunText(run.text);
       if (!normalizedText.trim() || !regex.test(normalizedText)) continue;
@@ -299,6 +323,39 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
         height: bounds.height,
         matchedText: bounds.matchedText,
       });
+    }
+
+    // Passaggio 2: match cross-run (etichetta spezzata su due righe fisiche consecutive)
+    // Es: "...si veda doc." fine riga + "n. 2 allegato..." inizio riga successiva
+    for (let i = 0; i < runs.length - 1; i++) {
+      const runA = runs[i];
+      const runB = runs[i + 1];
+
+      const textA = normalizeRunText(runA.text);
+      const textB = normalizeRunText(runB.text);
+      if (!textA.trim() || !textB.trim()) continue;
+
+      // Concatena i due run con uno spazio (simula lo spazio tra fine e inizio riga)
+      const joined   = textA + ' ' + textB;
+      const boundary = textA.length + 1; // posizione in joined dove inizia textB
+
+      const match = regex.exec(joined);
+      if (!match) continue;
+
+      const matchStart = match.index;
+      const matchEnd   = matchStart + match[0].length;
+
+      // Il match deve attraversare il confine tra i due run.
+      // Se è interamente in A o interamente in B, è già stato trovato nel passaggio 1.
+      if (matchEnd <= textA.length || matchStart >= boundary) continue;
+
+      // Frammento di A: dalla posizione matchStart fino alla fine di textA
+      const boundsA = matchBoundsInRange(runA.chars, runA.charMap, matchStart, textA.length);
+      // Frammento di B: dall'inizio di textB fino a (matchEnd - boundary)
+      const boundsB = matchBoundsInRange(runB.chars, runB.charMap, 0, matchEnd - boundary);
+
+      if (boundsA) results.push({ pageIndex, ...boundsA, matchedText: match[0] });
+      if (boundsB) results.push({ pageIndex, ...boundsB, matchedText: match[0] });
     }
   }
 

@@ -4,6 +4,31 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.4.5 — Fix match cross-riga: etichetta spezzata su due righe fisiche (2026-03-28)
+
+### Cosa ho fatto
+
+Aggiunto secondo passaggio in `findTextCoordinates`: sliding window cross-run.
+Dopo il loop normale per-run, itera su coppie di run consecutivi (`runA`, `runB`),
+concatena i loro testi con uno spazio e tenta il match. Se il match attraversa il
+confine tra i due run, calcola due bbox separati — uno per il frammento a fine riga
+(runA) e uno per il frammento a inizio riga (runB) — e produce due annotazioni
+distinte che puntano entrambe allo stesso allegato.
+
+Aggiunta funzione helper `matchBoundsInRange(chars, charMap, start, end)` che
+calcola il bbox per un sotto-range di un run, riusando la stessa logica di
+`matchBoundsFromChars` ma limitata a un intervallo di indici.
+
+### Decisioni
+
+- Non si tocca `extractCharRuns` (architettura invariata)
+- Il check `matchEnd <= textA.length || matchStart >= boundary` evita duplicati
+  con il passaggio 1 (match già trovati nella stessa riga)
+- Lo spazio di join nel testo concatenato gestisce il caso in cui l'etichetta
+  sia separata da un solo a-capo senza spazio finale nella riga precedente
+
+---
+
 ## v0.4.4 — Fix run spezzati tra LINE mupdf (2026-03-28)
 
 ### Cosa ho fatto

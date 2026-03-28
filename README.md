@@ -234,6 +234,7 @@ tests/
 - [x] v0.4.2 — Fix compatibilità PDF da Word: span multi-font uniti, normalizzazione NBSP
 - [x] v0.4.3 — Fix ligature tipografiche (fi, fl, ff) con charMap per mapping testo→glyph
 - [x] v0.4.4 — Fix etichette spezzate tra LINE mupdf consecutive (PDF Word giustificato)
+- [x] v0.4.5 — Fix match cross-riga: link su entrambe le righe quando l'etichetta va a capo
 - [ ] Fase 8 — Packaging notarizzato (Apple Developer ID, eliminare workaround xattr)
 
 ### Note tecniche
