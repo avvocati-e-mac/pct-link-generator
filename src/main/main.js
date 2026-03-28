@@ -5,6 +5,7 @@ import fs from 'fs';
 import mupdf from 'mupdf';
 import { processPCTDocument } from './pdf-processor.js';
 import { IPC_CHANNELS } from '../shared/types.js';
+import { setupUpdater, downloadUpdate, quitAndInstall } from './updater.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -34,6 +35,7 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
+    setupUpdater(mainWindow);
   });
 
   mainWindow.on('closed', () => {
@@ -121,6 +123,20 @@ function registerIpcHandlers() {
    */
   ipcMain.handle(IPC_CHANNELS.OPEN_PATH, async (_event, folderPath) => {
     await shell.openPath(folderPath);
+  });
+
+  /**
+   * Avvia il download dell'aggiornamento disponibile.
+   */
+  ipcMain.handle(IPC_CHANNELS.UPDATE_DOWNLOAD, async () => {
+    await downloadUpdate();
+  });
+
+  /**
+   * Installa l'aggiornamento scaricato e riavvia l'app.
+   */
+  ipcMain.handle(IPC_CHANNELS.UPDATE_INSTALL, () => {
+    quitAndInstall();
   });
 }
 

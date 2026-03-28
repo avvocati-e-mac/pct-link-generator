@@ -784,3 +784,56 @@ function escapeHtml(str) {
 
 // Stato iniziale step indicator
 updateStepIndicator(1);
+
+// ===== Auto-update banner =====
+
+const updateBanner     = document.getElementById('update-banner');
+const updateBannerText = document.getElementById('update-banner-text');
+const btnUpdateDownload = document.getElementById('btn-update-download');
+const btnUpdateDismiss  = document.getElementById('btn-update-dismiss');
+
+/** @type {boolean} True quando il download è completato e l'app è pronta per installare */
+let updateReady = false;
+
+if (window.electronAPI?.onUpdateEvent) {
+  // Aggiornamento disponibile
+  window.electronAPI.onUpdateEvent('available', ({ version }) => {
+    updateBannerText.textContent = `Nuova versione disponibile: v${escapeHtml(version)}`;
+    btnUpdateDownload.textContent = 'Aggiorna ora';
+    btnUpdateDownload.disabled = false;
+    updateBanner.classList.remove('hidden');
+  });
+
+  // Progresso download
+  window.electronAPI.onUpdateEvent('progress', ({ percent }) => {
+    updateBannerText.textContent = `Download aggiornamento: ${percent}%`;
+    btnUpdateDownload.disabled = true;
+  });
+
+  // Download completato — imposta solo il flag, non sostituisce il listener
+  window.electronAPI.onUpdateEvent('downloaded', () => {
+    updateBannerText.textContent = 'Aggiornamento pronto — riavvia per installare.';
+    btnUpdateDownload.textContent = 'Riavvia ora';
+    btnUpdateDownload.disabled = false;
+    updateReady = true;
+  });
+}
+
+btnUpdateDownload.addEventListener('click', async () => {
+  if (updateReady) {
+    await window.electronAPI.installUpdate();
+    return;
+  }
+  btnUpdateDownload.disabled = true;
+  updateBannerText.textContent = 'Download in corso…';
+  try {
+    await window.electronAPI.downloadUpdate();
+  } catch {
+    updateBannerText.textContent = 'Errore durante il download. Riprova più tardi.';
+    btnUpdateDownload.disabled = false;
+  }
+});
+
+btnUpdateDismiss.addEventListener('click', () => {
+  updateBanner.classList.add('hidden');
+});

@@ -55,6 +55,14 @@ const config = {
     ],
     category: 'Office',
   },
+
+  // Pubblicazione su GitHub Releases (usata da electron-updater per il controllo aggiornamenti).
+  // Il token GITHUB_TOKEN viene iniettato dalla CI; in locale --publish never evita upload accidentali.
+  publish: {
+    provider: 'github',
+    owner: 'filippostrozzi',
+    repo: 'pct-link-generator',
+  },
 };
 
 module.exports = config;

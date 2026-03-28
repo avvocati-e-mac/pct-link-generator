@@ -13,9 +13,16 @@
 export const IPC_CHANNELS = {
   PDF_PROCESS:          'pdf:process',
   DIALOG_SELECT_FOLDER: 'dialog:selectOutputFolder',
-RENDER_PDF_PAGE:      'render-pdf-page',
+  RENDER_PDF_PAGE:      'render-pdf-page',
   QUIT_APP:             'app:quit',
   OPEN_PATH:            'shell:openPath',
+  // Auto-update (Main → Renderer, push)
+  UPDATE_AVAILABLE:     'update:available',
+  UPDATE_PROGRESS:      'update:progress',
+  UPDATE_DOWNLOADED:    'update:downloaded',
+  // Auto-update (Renderer → Main, invoke)
+  UPDATE_DOWNLOAD:      'update:download',
+  UPDATE_INSTALL:       'update:install',
 };
 
 /**
