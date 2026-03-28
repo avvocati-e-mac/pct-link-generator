@@ -21,7 +21,7 @@ import mupdf from 'mupdf';
  * @type {string[][]}
  */
 export const LABEL_SYNONYM_GROUPS = [
-  ['doc', 'documento', 'all', 'allegato', 'att', 'attaccato', 'ex'],
+  ['doc', 'documento', 'all', 'allegato'],
 ];
 
 /**
@@ -32,14 +32,14 @@ export const LABEL_SYNONYM_GROUPS = [
  * @type {string}
  */
 export const SYNONYMS_PREFIX_PATTERN =
-  '(?:doc\\.?|documento|all\\.?|allegato|att\\.?|attaccato|ex)\\s+(?:n\\.?\\s*)?';
+  '(?:doc\\.?|documento|all\\.?|allegato)\\s+(?:n\\.?\\s*)?';
 
 /**
  * Crea una RegExp flessibile per trovare un'etichetta nel testo del PDF.
  *
  * **Caso A — label è solo un numero (es. "1", "11", "100"):**
  * Costruisce una regex con prefisso OBBLIGATORIO:
- *   (?:doc.?|documento|all.?|allegato|att.?|attaccato|ex)\s+(?:n.?\s*)?NUMERO(?![a-zA-Z0-9])
+ *   (?:doc\.?|documento|all\.?|allegato)\s+(?:n\.?\s*)?NUMERO(?![a-zA-Z0-9])
  * Il prefisso è obbligatorio → evita falsi match su numeri isolati (importi, date, P.IVA).
  * Fa match su "allegato 1", "doc. 1", "allegato n. 1", "Documento n. 1", "all. 1" ecc.
  * Lookahead negativo → "1" non fa match su "11", "1a", "1bis" (senza spazio).

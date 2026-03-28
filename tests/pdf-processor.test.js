@@ -123,8 +123,9 @@ describe('buildSearchRegex — sinonimi italiani PCT', () => {
     { label: 'doc. 1', input: 'documento 1', shouldMatch: true },
     { label: 'doc. 1', input: 'Allegato 1', shouldMatch: true },
     { label: 'doc. 1', input: 'all. 1', shouldMatch: true },
-    { label: 'doc. 1', input: 'att. 1', shouldMatch: true },
-    { label: 'doc. 1', input: 'ex 1', shouldMatch: true },
+    // att./attaccato/ex rimossi dal gruppo sinonimi
+    { label: 'doc. 1', input: 'att. 1', shouldMatch: false },
+    { label: 'doc. 1', input: 'ex 1', shouldMatch: false },
     // Falsi positivi — NON devono fare match
     { label: 'doc. 1', input: 'doc. 12', shouldMatch: false },
     { label: 'doc. 1', input: 'documento 11', shouldMatch: false },
@@ -170,7 +171,6 @@ describe('buildSearchRegex — label solo numero (posizione)', () => {
     { label: '1',   input: 'allegato n. 1',       desc: 'allegato n. 1' },
     { label: '1',   input: 'Documento n. 1',      desc: 'Documento n. 1' },
     { label: '1',   input: 'all. 1',              desc: 'all. 1' },
-    { label: '1',   input: 'att. 1',              desc: 'att. 1' },
     { label: '1',   input: 'allegato 1 bis',      desc: 'allegato 1 bis (spazio prima di bis)' },
     { label: '1',   input: 'doc. 1 ter',          desc: 'doc. 1 ter (spazio prima di ter)' },
     { label: '11',  input: 'allegato n. 11',      desc: 'allegato n. 11' },
