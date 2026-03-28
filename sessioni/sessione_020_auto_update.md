@@ -1,20 +1,23 @@
 # Sessione 020 — Auto-update via electron-updater
 
 **Data:** 2026-03-28
-**Versione:** 0.4.5 (branch feat/auto-update)
+**Versione:** 0.4.6 (rilasciata su master)
 
 ## Obiettivo
 
-Implementare l'aggiornamento automatico dell'app tramite `electron-updater` + GitHub Releases, con banner UI nel renderer che guida l'utente attraverso i 3 stati: disponibile → download → pronto per installazione.
+Implementare l'aggiornamento automatico dell'app tramite `electron-updater` + GitHub Releases, verificarlo con un ciclo completo di test manuali + test unitari + CI beta, e rilasciare la versione stabile `v0.4.6`.
 
 ## Decisioni prese
 
 1. **electron-updater 6.x** — libreria standard per Electron, si integra con GitHub Releases via `latest-mac.yml`.
 2. **`autoDownload: false`** — il download non parte automaticamente: l'utente clicca "Aggiorna ora".
-3. **Banner fisso bottom-right** — non modale, non invasivo. Dismissibile con ✕.
-4. **Canali IPC separati per push e invoke** — Main→Renderer tramite `webContents.send` (3 canali push), Renderer→Main tramite `ipcRenderer.invoke` (2 canali invoke).
-5. **`--publish always` in CI** — i job di build pubblicano direttamente sulla Release. Il job `release` separato aggiunge il body con le istruzioni xattr.
-6. **`owner/repo` in electron-builder.config.cjs** — placeholder `filippostrozzi/pct-link-generator`, da verificare prima del merge.
+3. **`autoInstallOnAppQuit: true`** — se il download è già avvenuto, l'installazione parte alla chiusura normale dell'app.
+4. **Banner fisso bottom-right** — non modale, non invasivo. Dismissibile con ✕. 3 stati: disponibile → progresso % → pronto per installare.
+5. **Flag `updateReady`** invece di `onclick` — un unico `addEventListener` con branch interno evita il doppio handler che scattava cliccando "Riavvia ora".
+6. **Import CJS di electron-updater** — `import pkg from 'electron-updater'; const { autoUpdater } = pkg;` perché electron-updater è un modulo CJS che non supporta named exports in ESM.
+7. **`autoUpdater.removeAllListeners()`** in `setupUpdater` — evita accumulo di listener in dev con hot-reload.
+8. **CI semplificata** — rimosso il job `softprops/action-gh-release` che conflittava con `--publish always` di electron-builder (stesso tag → errore `already_exists`). Sostituito con job `release-notes` che usa `gh release edit --draft=false`.
+9. **`owner: avvocati-e-mac`** — il repo è sotto l'organizzazione, non l'utente personale. Scoperto durante la CI beta con errore 404.
 
 ## File modificati
 
@@ -26,28 +29,31 @@ Implementare l'aggiornamento automatico dell'app tramite `electron-updater` + Gi
 | `src/main/main.js` | import updater + `setupUpdater(mainWindow)` + 2 handler IPC |
 | `src/renderer/index.html` | banner HTML (bottom-right) |
 | `src/renderer/style.css` | stili banner |
-| `src/renderer/renderer.js` | logica banner (3 stati) |
-| `electron-builder.config.cjs` | sezione `publish` con provider github |
-| `.github/workflows/build.yml` | `--publish always` + `GITHUB_TOKEN` nei 4 job di build |
+| `src/renderer/renderer.js` | logica banner 3 stati + fix doppio handler + error handling |
+| `electron-builder.config.cjs` | sezione `publish` con `provider: github`, `owner: avvocati-e-mac` |
+| `.github/workflows/build.yml` | `--publish always` nei 4 job + job `release-notes` con `gh release edit --draft=false` |
 | `package.json` / `package-lock.json` | `electron-updater ^6.8.3` |
+| `tests/updater.test.js` | **NUOVO** — 8 test unitari con mock `vi.hoisted` |
+| `README.md` / `ARCHITECTURE.md` / `DEVLOG.md` | aggiornati per v0.4.6 |
 
-## Bug noti da fixare prima del merge
+## Test eseguiti
 
-### Bug 1+2 — Doppio handler + no error handling in `renderer.js`
+- **93/93 test Vitest verdi** (85 PDF processor + 8 updater)
+- **Test manuale visivo** con debug timeout in `main.js` — tutti e 3 gli stati del banner verificati, dismiss funzionante, dark mode ok
+- **CI beta `v0.4.6-beta.0`** — 4 job di build verdi, Release pubblicata con `latest-mac.yml`, `.dmg`, `.exe`, `.AppImage`
+- **Release stabile `v0.4.6`** — pubblicata come Latest su GitHub
 
-**Problema:** nel callback `downloaded` (riga 816) si assegna `btnUpdateDownload.onclick = installUpdate`, ma il `addEventListener` della riga 822 non viene rimosso. Cliccando "Riavvia ora" scattano entrambi: `downloadUpdate()` fallisce con errore silenzioso, poi `installUpdate()` chiude l'app. In più, nessun error handling se il download fallisce.
+## Problemi riscontrati e risolti
 
-**Fix pianificato:**
-- Aggiungere `let updateReady = false;`
-- Nel callback `downloaded`: impostare solo `updateReady = true` (no `onclick`)
-- Nel listener `addEventListener('click')`: branch `if (updateReady)` → `installUpdate()`, altrimenti `downloadUpdate()` con `try/catch`
+| Problema | Causa | Fix |
+|----------|-------|-----|
+| `SyntaxError: Named export 'autoUpdater' not found` | electron-updater è CJS | `import pkg from 'electron-updater'` |
+| Errore 404 in CI su `/repos/filippostrozzi/...` | owner sbagliato (utente vs org) | `owner: 'avvocati-e-mac'` |
+| CI falliva con `already_exists` | electron-builder + softprops creavano entrambi la Release | Rimosso softprops, aggiunto `gh release edit` |
+| Release rimasta Draft | `gh release edit` non passava `--draft=false` | Aggiunto `--draft=false` al comando |
+| Mock Vitest falliva dopo fix import CJS | `vi.mock` non esponeva il `default` export | `default: { autoUpdater: mockAutoUpdater }` nel mock |
 
 ## Problemi noti / TODO prossima sessione
 
-- [ ] **Fix Bug 1+2** in `renderer.js` (vedi sopra) — obbligatorio prima del merge
-- [ ] **Test manuali con debug timeout** — aggiungere 4 `setTimeout` temporanei in `main.js` per simulare i 4 eventi IPC e verificare visivamente il banner
-- [ ] **Test unitari `tests/updater.test.js`** — mock di `electron-updater` via `vi.hoisted` + `vi.mock`, 8 test per `setupUpdater`, `downloadUpdate`, `quitAndInstall`
-- [ ] **Verificare `owner/repo`** in `electron-builder.config.cjs` con i valori reali del repo GitHub
-- [ ] **CI beta test** — tag `v0.4.6-beta.0` su `feat/auto-update` per verificare che `--publish always` crei la Release correttamente
-- [ ] **Merge e release stabile** — solo dopo che CI beta è verde
-- [ ] **Fase 8 — Notarizzazione Apple** (roadmap, blocca `quitAndInstall` su macOS)
+- [ ] **Fase 8 — Notarizzazione Apple** — `quitAndInstall` su macOS non completa l'installazione perché il DMG scaricato è bloccato da Gatekeeper (app non notarizzata). Richiede Apple Developer ID.
+- [ ] **Test con app installata reale** — verificare che un'app v0.4.5 installata rilevi v0.4.6 come aggiornamento disponibile (verificabile solo post-release con build packaged).

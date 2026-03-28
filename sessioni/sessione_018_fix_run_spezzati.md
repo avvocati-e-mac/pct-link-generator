@@ -26,6 +26,14 @@ linkate in alcune occorrenze del documento ma non in altre.
 | `src/main/pdf-processor.js` | `extractCharRuns`: rimossi `beginLine` e `endLine` da `stext.walk` |
 | `package.json` | bump versione `0.4.3 → 0.4.4` |
 | `DEVLOG.md` | aggiornato con decisione e motivazione |
+| `README.md` | aggiunta voce v0.4.4 in roadmap |
+
+## Release
+
+- Commit: `5a53d6c`
+- Tag: `v0.4.4`
+- Build CI: tutti e 4 i job verdi (macOS ARM, macOS Intel, Windows, Linux)
+- Release GitHub pubblicata con note descrittive del fix
 
 ## Problemi noti / TODO prossima sessione
 
