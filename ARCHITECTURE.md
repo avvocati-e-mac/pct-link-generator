@@ -174,7 +174,12 @@ UTENTE
                     │     findTextCoordinates(mainPdfPath, label)
                     │       → mupdf: apre PDF, stext.walk() per-carattere
                     │       → extractCharRuns(): raggruppa char in righe fisiche
-                    │       → matchBoundsFromChars(): bbox esatto del match
+                    │       → Passaggio 1 — match per-run (stessa riga):
+                    │           matchBoundsFromChars(): bbox esatto del match
+                    │       → Passaggio 2 — match cross-run (etichetta a cavallo di riga):
+                    │           coppie (runA, runB) consecutive → testo concatenato
+                    │           matchBoundsInRange(): bbox frammento in runA + bbox frammento in runB
+                    │           → due annotazioni separate per la stessa etichetta
                     │       → restituisce [{ pageIndex, x, y, width, height }]
                     │
                     ├─ addUnderlineLink(mainPdfPath, outputPath, annotations)
@@ -287,6 +292,26 @@ cur.chars.push({ c, quad });
 
 `matchBoundsFromChars` usa `Set(charMap.slice(start, end))` per deduplicare gli indici
 e ricavare solo i glyph unici con coordinate reali nel range del match.
+
+### matchBoundsInRange — match cross-riga
+
+Quando un'etichetta è spezzata da un a-capo reale (es. `doc.` a fine riga, `n. 2` a
+inizio riga successiva), `findTextCoordinates` tenta il match su coppie di run
+consecutivi. Se il match attraversa il confine, `matchBoundsInRange` calcola il bbox
+per il sotto-range di ciascun run che partecipa al match.
+
+```javascript
+// Passaggio 2 in findTextCoordinates
+const joined   = textA + ' ' + textB;
+const boundary = textA.length + 1;
+const match    = regex.exec(joined);
+// match attraversa il confine → due annotazioni
+const boundsA = matchBoundsInRange(runA.chars, runA.charMap, matchStart, textA.length);
+const boundsB = matchBoundsInRange(runB.chars, runB.charMap, 0, matchEnd - boundary);
+```
+
+Risultato: due sottolineature blu sulla stessa etichetta (una per riga), entrambe
+puntanti allo stesso allegato.
 
 ### normalizeRunText — spazi Unicode da PDF Word
 

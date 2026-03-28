@@ -34,6 +34,7 @@ Il link deve comparire su entrambe le righe (fine riga + inizio riga successiva)
 | `package.json` | bump versione `0.4.4 → 0.4.5` |
 | `DEVLOG.md` | aggiornato |
 | `README.md` | aggiunta voce v0.4.5 in roadmap |
+| `ARCHITECTURE.md` | aggiornato flusso `findTextCoordinates` e aggiunta sezione `matchBoundsInRange` |
 
 ## Test
 
