@@ -4,6 +4,30 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.5.2 — Fix CI: conflitto 422 tra job ARM e Intel (2026-03-28)
+
+### Cosa ho fatto
+
+**Causa root:** `electron-builder.config.cjs` definiva `arch: ['arm64', 'x64']` esplicitamente nei target macOS. Quando electron-builder trova le arch nella config, **ignora la flag CLI** (`--arm64` / `--x64`). Risultato: entrambi i job (ARM e Intel) costruivano entrambe le arch, caricavano gli stessi file su GitHub, e il secondo job che tentava di caricare un file già esistente riceveva `422 Unprocessable Entity`.
+
+**Fix:** rimosso `arch` dai target macOS nella config. Ora la config dichiara solo `target: ['dmg', 'zip']` e l'arch viene interamente controllata dalla flag CLI del job CI (`--arm64` nel job ARM, `--x64` nel job Intel). Ogni job costruisce e carica solo i suoi file.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `electron-builder.config.cjs` | `target: ['dmg', 'zip']` senza arch — la CLI del job decide |
+| `src/renderer/renderer.js` | `APP_VERSION` → `0.5.2` |
+| `src/renderer/index.html` | badge → `v0.5.2` |
+| `package.json` | `version` → `0.5.2` |
+| `README.md` | Link download v0.5.2 + riga roadmap |
+
+### Test
+
+93/93 verdi.
+
+---
+
 ## v0.5.1 — Fix auto-update macOS: ZIP target + propagazione errori (2026-03-28)
 
 ### Cosa ho fatto

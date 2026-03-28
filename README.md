@@ -45,14 +45,14 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT (Process
 
 ## Download
 
-Versione attuale: **v0.5.1**
+Versione attuale: **v0.5.2**
 
 | Sistema operativo | File da scaricare |
 |---|---|
-| 🍎 **macOS — Apple Silicon** (M1/M2/M3/M4) | [PCT-Link-Generator-0.5.1-arm64.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.1/PCT-Link-Generator-0.5.1-arm64.dmg) |
-| 🍎 **macOS — Intel** (x64) | [PCT-Link-Generator-0.5.1.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.1/PCT-Link-Generator-0.5.1.dmg) |
-| 🪟 **Windows** (x64) | [PCT-Link-Generator-Setup-0.5.1.exe](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.1/PCT-Link-Generator-Setup-0.5.1.exe) |
-| 🐧 **Linux** (x64) | [PCT-Link-Generator-0.5.1.AppImage](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.1/PCT-Link-Generator-0.5.1.AppImage) |
+| 🍎 **macOS — Apple Silicon** (M1/M2/M3/M4) | [PCT-Link-Generator-0.5.2-arm64.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.2/PCT-Link-Generator-0.5.2-arm64.dmg) |
+| 🍎 **macOS — Intel** (x64) | [PCT-Link-Generator-0.5.2.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.2/PCT-Link-Generator-0.5.2.dmg) |
+| 🪟 **Windows** (x64) | [PCT-Link-Generator-Setup-0.5.2.exe](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.2/PCT-Link-Generator-Setup-0.5.2.exe) |
+| 🐧 **Linux** (x64) | [PCT-Link-Generator-0.5.2.AppImage](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.2/PCT-Link-Generator-0.5.2.AppImage) |
 
 > **Non sai quale Mac hai?** Clicca sul menu  (in alto a sinistra) → "Informazioni su questo Mac". Se vedi "Chip: Apple M…" scarica la versione **ARM64**, altrimenti scarica la versione **Intel**.
 
@@ -240,6 +240,7 @@ tests/
 - [x] v0.4.6 — Auto-update: banner notifica aggiornamenti disponibili, download e installazione in-app
 - [x] v0.5.0 — UX: badge versione nell'header, schermata introduttiva con guida ai pattern PCT e opzione "Non mostrare più"; link diretti di download nel body delle release GitHub
 - [x] v0.5.1 — Fix auto-update macOS: aggiunto target ZIP (necessario per electron-updater su app non notarizzate); fix propagazione errori download al renderer
+- [x] v0.5.2 — Fix CI: arch rimossa dalla config electron-builder (la passa la flag CLI del job), risolve conflitto 422 tra job ARM e Intel
 - [ ] Fase 8 — Packaging notarizzato (Apple Developer ID, eliminare workaround xattr)
 
 ### Note tecniche

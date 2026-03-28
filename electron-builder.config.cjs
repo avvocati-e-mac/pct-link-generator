@@ -17,20 +17,14 @@ const config = {
     '!**/.DS_Store',
   ],
 
-  // macOS: DMG per ARM (Apple Silicon) e Intel x64.
+  // macOS: DMG (installazione manuale) + ZIP (electron-updater in-place).
+  // Le arch NON sono specificate qui: vengono passate dalla CI via flag
+  // --arm64 / --x64, così ogni job costruisce solo la propria arch.
   // identity: null — disabilita code signing.
-  // Senza certificato Apple Developer l'app mostra avviso "sviluppatore non identificato".
-  // Accettabile per distribuzione open source.
   mac: {
     category: 'public.app-category.productivity',
     icon: 'build-resources/icon.icns',
-    // DMG per l'installazione manuale + ZIP obbligatorio per electron-updater.
-    // Su macOS, electron-updater usa il ZIP per gli aggiornamenti in-place;
-    // il solo DMG fallirebbe la verifica firma sulle app non notarizzate.
-    target: [
-      { target: 'dmg', arch: ['arm64', 'x64'] },
-      { target: 'zip', arch: ['arm64', 'x64'] },
-    ],
+    target: ['dmg', 'zip'],
     identity: null,
   },
 

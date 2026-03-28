@@ -5,7 +5,7 @@
 
 // ===== Versione applicazione =====
 // ⚠️ Aggiornare manualmente ad ogni bump di versione in package.json
-const APP_VERSION = '0.5.1';
+const APP_VERSION = '0.5.2';
 
 // ===== Stato applicazione =====
 
