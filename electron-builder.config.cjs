@@ -60,7 +60,7 @@ const config = {
   // Il token GITHUB_TOKEN viene iniettato dalla CI; in locale --publish never evita upload accidentali.
   publish: {
     provider: 'github',
-    owner: 'filippostrozzi',
+    owner: 'avvocati-e-mac',
     repo: 'pct-link-generator',
   },
 };
