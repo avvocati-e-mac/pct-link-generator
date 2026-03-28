@@ -133,6 +133,7 @@ jobs:
             --notes "${NOTES}
 
           ${APPEND}" \
+            --draft=false \
             --prerelease=${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
