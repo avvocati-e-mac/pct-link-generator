@@ -262,6 +262,39 @@ const xRight  = quad[2]; // ur.x
 mupdf tratta paragrafi multi-riga come una singola `LINE`. Il codice spezza il run quando
 il delta-Y tra caratteri consecutivi supera `max(2pt, charH * 0.5)`.
 
+### charMap — gestione ligature tipografiche
+
+mupdf espande le ligature tipografiche (fi, fl, ff, ffi, ffl) emettendo **due callback `onChar`**:
+- primo char: bbox pieno (larghezza > 0)
+- secondo char: bbox larghezza zero (quad degenere — non ha coordinate proprie)
+
+`extractCharRuns` introduce `charMap[]`: ogni indice in `run.text` punta all'indice
+corrispondente in `run.chars`. I char con bbox zero vengono aggiunti al testo ma il loro
+`charMap[i]` punta al glyph precedente (quello con il bbox pieno).
+
+```javascript
+// Char con bbox zero = componente secondaria di ligatura
+if (charWidth < 0.5) {
+  cur.text += c;
+  cur.charMap.push(cur.chars.length - 1); // punta all'ultimo char valido
+  return;
+}
+// Char normale
+cur.text += c;
+cur.charMap.push(cur.chars.length);       // indice del char che stiamo per aggiungere
+cur.chars.push({ c, quad });
+```
+
+`matchBoundsFromChars` usa `Set(charMap.slice(start, end))` per deduplicare gli indici
+e ricavare solo i glyph unici con coordinate reali nel range del match.
+
+### normalizeRunText — spazi Unicode da PDF Word
+
+Word inserisce `U+00A0` (NBSP) tra abbreviazioni e numeri in alcuni stili. La funzione
+`normalizeRunText` converte NBSP e varianti di spazio Unicode in spazio ordinario
+**prima** del match regex. La sostituzione è sempre 1:1 (non altera la lunghezza del
+testo) per preservare il mapping `charMap`.
+
 ---
 
 ## Conversione coordinate mupdf → pdf-lib (CRITICO)

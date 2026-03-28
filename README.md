@@ -136,13 +136,11 @@ Zero connessioni di rete. Tutto viene elaborato localmente sul tuo computer. GDP
 
 Se l'atto è stato scritto in Word ed esportato in PDF, i link potrebbero non venire creati anche quando il testo `doc. 1` o `allegato 1` è visivamente presente nel documento.
 
-**Cause possibili:**
+> **Dalla versione 0.4.2** la compatibilità con i PDF Word è notevolmente migliorata. Se usi una versione precedente, aggiorna prima di tutto.
 
-- **Testo in grassetto o corsivo:** Word usa font separati per regular/bold/italic. Se l'etichetta (`doc. 1`) è in grassetto, Word la scrive nel PDF come due span distinti con font diversi. L'app potrebbe non riuscire a ricucire i due span e quindi non trovare il testo completo.
-- **Spazio non-breaking (NBSP):** Word inserisce automaticamente uno spazio non-breaking (`U+00A0`) tra l'abbreviazione e il numero (es. `doc.·1` invece di `doc. 1`) in alcuni stili tipografici. L'estrazione può restituire caratteri diversi da quelli attesi dalla regex.
-- **Metodo di esportazione sbagliato:** se il PDF è stato prodotto con **Microsoft Print to PDF** (driver di stampa) o con **Stampa → Salva come PDF** su macOS, il testo può essere frammentato in modo non estraibile.
+**Causa residua — metodo di esportazione sbagliato:**
 
-**Come esportare correttamente da Word:**
+Se il PDF è stato prodotto con **Microsoft Print to PDF** (driver di stampa) o con **Stampa → Salva come PDF** su macOS, il testo può essere frammentato in modo non estraibile. Usa sempre l'export interno di Word:
 
 | Metodo | Risultato |
 |---|---|
@@ -200,7 +198,7 @@ npm start
 npm test
 ```
 
-78 test Vitest, tutti verdi.
+85 test Vitest, tutti verdi.
 
 ### Struttura
 
@@ -233,10 +231,14 @@ tests/
 - [x] Fase 6d — Anteprima PDF via mupdf (immagine adattiva, navigazione multi-pagina), pulsante Esci
 - [x] Fase 7 — UX: progress bar indeterminata, notifica nativa al termine, apertura cartella output, pulsante Esci, step indicator nel header
 - [x] Fase 7b — UI polish: layout 2 colonne responsive nello step 1, anteprima PDF a tutta larghezza, pulsanti step 2 e 3 riposizionati, step 3 con pulsante ← Indietro
-- [ ] Fase 8 — Packaging (electron-builder, DMG/EXE)
+- [x] v0.4.2 — Fix compatibilità PDF da Word: span multi-font uniti, normalizzazione NBSP
+- [x] v0.4.3 — Fix ligature tipografiche (fi, fl, ff) con charMap per mapping testo→glyph
+- [ ] Fase 8 — Packaging notarizzato (Apple Developer ID, eliminare workaround xattr)
 
 ### Note tecniche
 
 - **Coordinate:** mupdf restituisce coordinate per-carattere in sistema top-left (Y↓). La conversione a sistema pdf-lib (bottom-left, Y↑) avviene solo in `addUnderlineLink`: `yPdfLib = pageHeight - y - height`.
+- **charMap:** `extractCharRuns` produce un array `charMap[]` che mappa ogni indice del testo all'indice corrispondente in `chars`. Necessario per gestire le ligature tipografiche (fi, fl, ff) che mupdf emette come glyph singolo con più codepoint Unicode.
+- **normalizeRunText:** normalizza NBSP e varianti di spazio Unicode in spazio normale prima del match regex — gestisce i PDF da Word che usano `U+00A0` tra abbreviazioni e numeri.
 - **Link relativi:** le Launch action usano `PDFString` per i path — compatibile con Acrobat e Foxit.
 - **Sicurezza Electron:** `contextIsolation: true`, `nodeIntegration: false`, comunicazione esclusivamente via `contextBridge` + `ipcRenderer.invoke`.
