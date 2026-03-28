@@ -3,6 +3,10 @@
  * Nessun accesso a Node.js o fs. Solo window.electronAPI per comunicare col main.
  */
 
+// ===== Versione applicazione =====
+// ⚠️ Aggiornare manualmente ad ogni bump di versione in package.json
+const APP_VERSION = '0.5.0';
+
 // ===== Stato applicazione =====
 
 /** @type {string|null} Percorso assoluto del PDF atto principale */
@@ -106,6 +110,12 @@ const btnPdfPrev          = document.getElementById('btn-pdf-prev');
 const btnPdfNext          = document.getElementById('btn-pdf-next');
 const pdfPageIndicator    = document.getElementById('pdf-page-indicator');
 
+// Intro
+const viewIntro       = document.getElementById('view-intro');
+const btnIntroStart   = document.getElementById('btn-intro-start');
+const introDontShow   = document.getElementById('intro-dont-show');
+const versionBadge    = document.getElementById('version-badge');
+
 // ===== Dark mode =====
 
 /**
@@ -127,6 +137,42 @@ function initTheme() {
 }
 
 initTheme();
+
+// ===== Badge versione =====
+if (versionBadge) versionBadge.textContent = 'v' + APP_VERSION;
+
+// ===== Schermata introduttiva =====
+/**
+ * Mostra la schermata intro se non è stata già dismessa dall'utente.
+ * Usa localStorage per la persistenza (disponibile in Electron).
+ */
+function initIntro() {
+  let dontShow = false;
+  try { dontShow = localStorage.getItem('pct-intro-hidden') === 'true'; } catch { /* silent */ }
+
+  if (dontShow) {
+    if (viewIntro) viewIntro.classList.add('hidden');
+    // gli step sono già visibili per default (showStep1 verrà chiamato in coda)
+  } else {
+    if (viewIntro) viewIntro.classList.remove('hidden');
+    // nasconde gli step finché l'utente non clicca "Inizia"
+    viewStep1.classList.add('hidden');
+    viewStep2.classList.add('hidden');
+    viewStep3.classList.add('hidden');
+  }
+}
+
+if (btnIntroStart) {
+  btnIntroStart.addEventListener('click', () => {
+    if (introDontShow && introDontShow.checked) {
+      try { localStorage.setItem('pct-intro-hidden', 'true'); } catch { /* silent */ }
+    }
+    if (viewIntro) viewIntro.classList.add('hidden');
+    showStep1();
+  });
+}
+
+initIntro();
 
 if (btnThemeToggle) {
   btnThemeToggle.addEventListener('click', () => {

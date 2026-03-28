@@ -33,10 +33,120 @@
       </div>
     </div>
 
-    <button id="btn-theme-toggle" aria-label="Attiva/disattiva dark mode" class="btn-theme-toggle">🌙</button>
+    <div class="header-right">
+      <span class="version-badge" id="version-badge">v0.5.0</span>
+      <button id="btn-theme-toggle" aria-label="Attiva/disattiva dark mode" class="btn-theme-toggle">🌙</button>
+    </div>
   </header>
 
   <main>
+
+    <!-- ===== Schermata introduttiva ===== -->
+    <section id="view-intro" class="view-intro">
+
+      <div class="intro-header">
+        <div class="intro-icon">⚖️</div>
+        <h2 class="intro-title">Come funziona PCT Link Generator</h2>
+        <p class="intro-lead">
+          Questa app aggiunge automaticamente i <strong>collegamenti cliccabili agli allegati</strong>
+          nel tuo atto PDF, pronti per il deposito nel Processo Civile Telematico.
+        </p>
+      </div>
+
+      <div class="intro-steps">
+        <div class="intro-step">
+          <span class="intro-step-num">1</span>
+          <div class="intro-step-body">
+            <strong>Carica l'atto principale</strong>
+            <p>Trascina (o seleziona) il PDF dell'atto — quello che riceverà i link cliccabili.</p>
+          </div>
+        </div>
+        <div class="intro-step">
+          <span class="intro-step-num">2</span>
+          <div class="intro-step-body">
+            <strong>Aggiungi gli allegati</strong>
+            <p>Nell'ordine in cui compaiono nell'atto. L'app li abbina per posizione (1°, 2°, 3°…).</p>
+          </div>
+        </div>
+        <div class="intro-step">
+          <span class="intro-step-num">3</span>
+          <div class="intro-step-body">
+            <strong>Genera i link</strong>
+            <p>L'app cerca nell'atto tutti i riferimenti e aggiunge un link blu cliccabile su ciascuno.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="intro-patterns">
+        <h3 class="intro-patterns-title">📋 Riferimenti che l'app riconosce automaticamente</h3>
+        <p class="intro-patterns-lead">
+          Il confronto è <strong>senza distinzione maiuscole/minuscole</strong>.
+          Sono riconosciute tutte le varianti seguenti, con o senza punto, con o senza spazio, con o senza <em>n.</em> intermedio:
+        </p>
+
+        <table class="patterns-table">
+          <thead>
+            <tr>
+              <th>Forma nell'atto</th>
+              <th>Esempi riconosciuti ✓</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>doc. 1</code> &nbsp;/&nbsp; <code>doc 1</code></td>
+              <td><em>doc. 1</em> &nbsp; <em>Doc.1</em> &nbsp; <em>DOC. 1</em> &nbsp; <em>doc. n. 1</em> &nbsp; <em>doc n. 1</em></td>
+            </tr>
+            <tr>
+              <td><code>documento 1</code></td>
+              <td><em>documento 1</em> &nbsp; <em>Documento 1</em> &nbsp; <em>DOCUMENTO n. 1</em></td>
+            </tr>
+            <tr>
+              <td><code>all. 1</code> &nbsp;/&nbsp; <code>all 1</code></td>
+              <td><em>all. 1</em> &nbsp; <em>All.1</em> &nbsp; <em>ALL. 1</em> &nbsp; <em>all. n. 1</em> &nbsp; <em>all n. 1</em></td>
+            </tr>
+            <tr>
+              <td><code>allegato 1</code></td>
+              <td><em>allegato 1</em> &nbsp; <em>Allegato 1</em> &nbsp; <em>ALLEGATO n. 1</em></td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="intro-warning-box">
+          <p class="intro-warning-title">⚠️ Cosa NON viene riconosciuto — e perché non è un errore dell'app</p>
+          <ul>
+            <li>
+              <strong>Bis/ter/quater attaccati al numero senza spazio:</strong>
+              <code>doc. 1bis</code>, <code>allegato 2ter</code>, <code>all. 3quater</code>
+              — l'app segnala questi casi con un avviso specifico, ma non può creare il link.
+              <em>Soluzione: scrivi nell'atto <code>doc. 1 bis</code> (con spazio) oppure usa la numerazione ordinaria.</em>
+            </li>
+            <li>
+              <strong>Abbreviazioni non standard:</strong> <code>Att.</code>, <code>Es.</code>, <code>Enc.</code>,
+              <code>Tab.</code>, <code>Pag.</code> — non fanno parte dei pattern PCT riconosciuti.
+            </li>
+            <li>
+              <strong>Numeri romani:</strong> <code>allegato I</code>, <code>doc. II</code>, <code>all. III</code>
+              — riconosciuti solo i numeri arabi (1, 2, 3…).
+            </li>
+          </ul>
+          <p class="intro-warning-note">
+            Se l'app segnala <em>"allegato non trovato"</em>, non è un malfunzionamento:
+            significa che quel riferimento nell'atto non corrisponde a nessuna delle forme riconoscibili sopra.
+            Controlla come hai scritto il riferimento nell'atto.
+          </p>
+        </div>
+      </div>
+
+      <div class="intro-footer">
+        <label class="intro-dont-show-label">
+          <input type="checkbox" id="intro-dont-show">
+          Non mostrare più all'avvio
+        </label>
+        <button class="btn-primary" id="btn-intro-start">Ho capito, inizia →</button>
+      </div>
+
+    </section>
+    <!-- ===== Fine schermata introduttiva ===== -->
 
     <!-- ===== Step 1: Atto principale ===== -->
     <section id="view-step1">

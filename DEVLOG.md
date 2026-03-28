@@ -4,6 +4,57 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.5.0 — Badge versione + schermata introduttiva + link download in release (2026-03-28)
+
+### Cosa ho fatto
+
+**Badge versione nell'header:**
+- Aggiunto wrapper `<div class="header-right">` che contiene il badge `v0.4.6` e il toggle tema, mantenendo il layout grid a 3 colonne dell'header.
+- Costante `APP_VERSION = '0.4.6'` in `renderer.js` — da aggiornare manualmente ad ogni bump (vedi Regola 9 in CLAUDE.md).
+
+**Schermata introduttiva (`#view-intro`):**
+- Prima sezione di `<main>`, visibile al primo avvio o se l'utente non ha dismesso.
+- Contiene: 3 card "Come funziona", tabella pattern PCT riconosciuti, box avvisi su cosa NON viene riconosciuto (bis/ter, abbreviazioni non standard, numeri romani).
+- Footer con checkbox "Non mostrare più" (persiste in `localStorage.pct-intro-hidden`) e pulsante "Ho capito, inizia →".
+- `initIntro()` legge localStorage all'avvio: se assente, mostra intro e nasconde i 3 step; se presente, salta direttamente allo step 1.
+
+**Corpo della release GitHub:**
+- Job `release-notes` in `build.yml` riscritto: costruisce il body con `printf` + `--notes-file` (evita problemi di indentazione con heredoc in YAML).
+- Il body ora inizia con una tabella markdown dei 4 link di download diretti, costruiti dinamicamente dal tag della release — nessun aggiornamento manuale richiesto in CI.
+- Le note esistenti della release vengono preservate in coda (`EXISTING_NOTES`).
+
+**Documentazione:**
+- `CLAUDE.md`: aggiunta Regola 9 "Checklist obbligatoria prima di ogni build GitHub" con i passi da seguire prima di creare un tag di release.
+- `README.md`: sezione Download aggiornata con link diretti alla v0.4.6 e riga roadmap per la schermata intro.
+- `ARCHITECTURE.md`: aggiornate le righe di `index.html`, `renderer.js` e `build.yml`.
+
+### Decisioni prese
+
+1. **`APP_VERSION` hardcodata** invece di leggerla via IPC da `app.getVersion()`: più semplice, nessun canale IPC aggiuntivo. Il rischio di disallineamento è mitigato dalla Regola 9 in CLAUDE.md che impone l'aggiornamento prima di ogni tag.
+
+2. **`printf '%s\n'` invece di heredoc** per il body della release: i heredoc in script shell indentati in YAML includono gli spazi di indentazione nel contenuto — `printf` evita il problema senza dover usare tab o de-indentare il blocco YAML.
+
+3. **Sezione Assets non collassabile**: GitHub non espone API per collassare il menù Assets. La soluzione adottata è rendere i link di download così prominenti nel body da rendere il menù Assets irrilevante per l'utente finale.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `src/renderer/index.html` | Wrapper `header-right` + intera sezione `#view-intro` |
+| `src/renderer/style.css` | `.header-right`, `.version-badge`, tutti i selettori `.intro-*`, `.patterns-table` |
+| `src/renderer/renderer.js` | `APP_VERSION`, refs DOM intro, `initIntro()`, listener `btnIntroStart` |
+| `.github/workflows/build.yml` | Job `release-notes` riscritto con tabella download + `--notes-file` |
+| `README.md` | Sezione Download con link diretti v0.4.6 + riga roadmap |
+| `ARCHITECTURE.md` | Aggiornate righe `index.html`, `renderer.js`, `build.yml` |
+| `CLAUDE.md` | Aggiunta Regola 9 — checklist pre-release |
+| `DEVLOG.md` | Questo aggiornamento |
+
+### Test
+
+93/93 verdi. Nessuna modifica alla logica PDF o ai test.
+
+---
+
 ## v0.4.6 — Auto-update via electron-updater + GitHub Releases (2026-03-28)
 
 ### Cosa ho fatto

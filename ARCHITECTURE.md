@@ -94,7 +94,7 @@ I canali Main→Renderer usano `mainWindow.webContents.send` / `ipcRenderer.on` 
 | File | Responsabilità |
 |------|----------------|
 | `electron-builder.config.cjs` | Configurazione electron-builder (CommonJS). Definisce target DMG (macOS ARM + x64), NSIS (Windows x64), AppImage (Linux x64), icone per piattaforma. Sezione `publish` con `provider: github` + `owner/repo` per electron-updater. |
-| `.github/workflows/build.yml` | CI/CD: 4 job di build paralleli (`--publish always` — electron-builder pubblica gli asset direttamente sulla GitHub Release) + job `release-notes` che appende le istruzioni di installazione macOS via `gh release edit`. |
+| `.github/workflows/build.yml` | CI/CD: 4 job di build paralleli (`--publish always` — electron-builder pubblica gli asset direttamente sulla GitHub Release) + job `release-notes` che scrive il body completo della release con tabella link di download per piattaforma + istruzioni macOS via `gh release edit --notes-file`. |
 
 ---
 
@@ -102,8 +102,8 @@ I canali Main→Renderer usano `mainWindow.webContents.send` / `ipcRenderer.on` 
 
 | File | Responsabilità |
 |------|----------------|
-| `index.html` | Shell HTML. Step 1 (drop PDF atto + anteprima immagine con navigazione pagine ‹/›), Step 2 (drop allegati, lista riordinabile, input startIndex, select rinomina), toggle dark mode, modale anteprima, area stato con pulsante "Esci". |
-| `renderer.js` | Logica UI: navigazione step 1/2, dark mode (`initTheme` + localStorage), anteprima PDF multi-pagina (`renderPdfPagePreview` + stato `currentPage`/`totalPdfPages`), `getStartIndex`, `hasLeadingNumber`, `buildRenamedName`, `stripLeadingNumber`, badge ⚠️, drag & drop riordino, multi-selezione, modale preview, chiamate `window.electronAPI`. |
+| `index.html` | Shell HTML. Schermata intro (`#view-intro`) con guida ai pattern PCT, tabella esempi e checkbox "Non mostrare più". Step 1 (drop PDF atto + anteprima immagine con navigazione pagine ‹/›), Step 2 (drop allegati, lista riordinabile, input startIndex, select rinomina), badge versione in header, toggle dark mode, modale anteprima, area stato con pulsante "Esci". |
+| `renderer.js` | Logica UI: `initIntro()` (schermata introduttiva con persistenza localStorage), badge versione (`APP_VERSION`), navigazione step 1/2, dark mode (`initTheme` + localStorage), anteprima PDF multi-pagina (`renderPdfPagePreview` + stato `currentPage`/`totalPdfPages`), `getStartIndex`, `hasLeadingNumber`, `buildRenamedName`, `stripLeadingNumber`, badge ⚠️, drag & drop riordino, multi-selezione, modale preview, chiamate `window.electronAPI`. |
 | `style.css` | Stili vanilla: variabili CSS con tema light/dark (`[data-theme="dark"]` + `prefers-color-scheme`), layout grid allegati, step views, drag highlighting, lista scrollabile. |
 
 ---

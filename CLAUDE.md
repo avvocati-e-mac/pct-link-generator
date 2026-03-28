@@ -119,6 +119,36 @@ Usa Conventional Commits:
 **DEVLOG.md:** aggiorna dopo ogni commit con: cosa hai fatto, decisioni prese,
 problemi risolti o aperti.
 
+### 9. Checklist obbligatoria prima di ogni build GitHub (tag di release)
+
+Prima di creare un tag `vX.Y.Z` e avviare la CI, esegui **tutti** questi passi nell'ordine:
+
+1. **Aggiorna `README.md` — sezione Download:**
+   - Cambia il numero di versione nella riga "Versione attuale: **vX.Y.Z**"
+   - Aggiorna tutti e 4 i link di download con il nuovo numero di versione
+     (cerca e sostituisci il vecchio numero ovunque nella sezione Download)
+
+2. **Aggiorna `README.md` — sezione Roadmap:**
+   - Aggiungi una riga `- [x] vX.Y.Z — [descrizione delle novità]` con le funzionalità
+     introdotte nella release
+
+3. **Aggiorna `src/renderer/renderer.js`:**
+   - Cambia la costante `APP_VERSION` con il nuovo numero di versione
+
+4. **Aggiorna `DEVLOG.md`:**
+   - Aggiungi una sezione `## vX.Y.Z — [titolo] (YYYY-MM-DD)` con: cosa è cambiato,
+     decisioni prese, file modificati, risultato dei test
+
+5. **Aggiorna `ARCHITECTURE.md`** se l'architettura è cambiata
+
+6. **Esegui `npm test`** — tutti i test devono essere verdi
+
+7. **Crea il commit** con `chore: bump vX.Y.Z` e poi il tag
+
+> ⚠️ Non creare mai il tag prima di aver aggiornato `README.md` con i link di download:
+> i link puntano direttamente all'URL del tag e devono essere corretti prima che
+> la release sia pubblica.
+
 ### 6. Privacy nei log
 **MAI** loggare il contenuto dei file PDF o il testo estratto.
 Logga solo: nome file sanitizzato, dimensione, numero pagine, timing,
