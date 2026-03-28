@@ -33,12 +33,6 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-arm64
-          path: dist/*.dmg
-
   # ─────────────────────────────────────────
   # macOS Intel (x64) — cross-compilato da macos-latest (ARM)
   # macos-13 non è più disponibile sui runner GitHub
@@ -63,12 +57,6 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: mac-x64
-          path: dist/*.dmg
-
   # ─────────────────────────────────────────
   # Windows x64
   # ─────────────────────────────────────────
@@ -91,12 +79,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-x64
-          path: dist/*.exe
-
   # ─────────────────────────────────────────
   # Linux x64 (AppImage)
   # ─────────────────────────────────────────
@@ -116,55 +98,5 @@ jobs:
 
       - name: Build Linux x64
         run: npx electron-builder --linux --x64 --publish always --config electron-builder.config.cjs
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Upload artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64
-          path: dist/*.AppImage
-
-  # ─────────────────────────────────────────
-  # Release: aggrega tutti gli artefatti e crea la GitHub Release
-  # Eseguito solo su push di tag (non su workflow_dispatch manuale)
-  # ─────────────────────────────────────────
-  release:
-    name: Create GitHub Release
-    needs: [build-mac-arm, build-mac-x64, build-windows, build-linux]
-    runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: artifacts
-
-      - name: Create Release and upload assets
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            artifacts/mac-arm64/*.dmg
-            artifacts/mac-x64/*.dmg
-            artifacts/windows-x64/*.exe
-            artifacts/linux-x64/*.AppImage
-          generate_release_notes: true
-          append_body: true
-          body: |
-            ---
-
-            ## Installazione su macOS
-
-            L'app non è notarizzata. Prima di avviarla, esegui nel Terminale:
-
-            ```bash
-            sudo xattr -cr /Applications/PCT\ Link\ Generator.app
-            ```
-
-            Questo comando rimuove l'attributo di quarantena imposto da macOS sui file scaricati da internet.
-
-            > Sostituisci il percorso se hai installato l'app in una cartella diversa da `/Applications`.
-          draft: false
-          prerelease: ${{ contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
