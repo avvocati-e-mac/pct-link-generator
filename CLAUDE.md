@@ -145,6 +145,12 @@ Prima di creare un tag `vX.Y.Z` e avviare la CI, esegui **tutti** questi passi n
 
 7. **Crea il commit** con `chore: bump vX.Y.Z` e poi il tag
 
+8. **Dopo che la CI ha pubblicato la release**, aggiorna il body su GitHub con le novità:
+   - Usa `gh release edit vX.Y.Z --repo avvocati-e-mac/pct-link-generator --notes-file <file>`
+   - Il body deve contenere: tabella link download (generata dal job CI), sezione
+     **## Novità in questa versione** con le funzionalità introdotte in linguaggio
+     comprensibile agli utenti finali (non tecnico), istruzioni macOS.
+
 > ⚠️ Non creare mai il tag prima di aver aggiornato `README.md` con i link di download:
 > i link puntano direttamente all'URL del tag e devono essere corretti prima che
 > la release sia pubblica.
