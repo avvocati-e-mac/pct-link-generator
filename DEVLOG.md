@@ -4,6 +4,58 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## feat: link all'elenco documenti PCT + fix falsi positivi (2026-03-30)
+
+### Cosa ho fatto
+
+Aggiunta la ricerca del marcatore numerico di inizio voce nell'elenco documenti allegati
+(di solito l'ultima pagina degli atti PCT). Prima l'app cercava solo i riferimenti nel
+corpo del testo (`doc. 1`, `allegato 1`, ecc.); ora cerca anche il pattern numerico
+all'inizio riga che Word, LibreOffice e LaTeX generano negli elenchi puntati:
+
+| Formato | Esempio | Generato da |
+|---------|---------|------------|
+| `N)` | `1) Visura camerale di Beta S.p.A.` | Word/LibreOffice numbered list |
+| `N.` | `1. Visura camerale di Beta S.p.A.` | LaTeX `\enumerate`, LibreOffice |
+| `N –` | `1 – Visura camerale di Beta S.p.A.` | LibreOffice em-dash |
+| `N -` | `1 - Visura camerale di Beta S.p.A.` | Word/LibreOffice trattino |
+
+### Decisioni prese
+
+- **Solo `pdf-processor.js` e test** — nessuna modifica a renderer, IPC, UI. La label
+  passata dal renderer rimane `"1"` (numero puro); la logica aggiuntiva è tutta interna.
+- **Regex ancorata con `^` + flag `m`** — il discriminante principale è che `N)` nell'elenco
+  è all'inizio di un run fisico (mupdf spezza per riga Y), mentre `(cfr. Doc. 1)` ha il
+  numero a metà riga. L'ancora `^` con `m` evita i falsi match senza euristica aggiuntiva.
+- **`listRegex` parallela, non alternativa** — le due regex (corpus + elenco) vengono
+  applicate separatamente nello stesso loop Passaggio 1. Mantiene la leggibilità e il
+  Passaggio 2 (cross-run) invariato (le voci elenco non si spezzano mai su righe fisiche).
+- **`(?!\d)` dopo il numero** — evita che label `"1"` matchi `"10)"` o `"12."`.
+
+### Decisioni prese (fix falsi positivi)
+
+Il primo approccio produceva falsi positivi: `1. Eccezione di prescrizione` (titoletto sezione)
+e `1. Rigettare...` (conclusioni numerate) matchavano il pattern `N.`.
+
+**Soluzione:** `findDocumentListPageIndex(doc)` scansiona il PDF a ritroso cercando l'header
+della sezione (`ELENCO DEI DOCUMENTI PRODOTTI`, `ELENCO DOCUMENTI`, `INDICE DEI DOCUMENTI`,
+`DOCUMENTI PRODOTTI`). `listRegex` viene applicata solo alle pagine ≥ quell'header.
+Se l'header non viene trovato → `listRegex` non applicata mai → zero falsi positivi garantiti.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `src/main/pdf-processor.js` | Nuova `buildListEntryRegex(n)` + `DOCUMENT_LIST_HEADER_RE` (esportata) + `findDocumentListPageIndex(doc)`. In `findTextCoordinates`: `listSectionPageIndex` + guard `pageIndex >= listSectionPageIndex`. L'annotazione dell'elenco copre l'intera larghezza del run (`xRunStart→xRunEnd`). |
+| `tests/pdf-processor.test.js` | Import `buildListEntryRegex` + `DOCUMENT_LIST_HEADER_RE`. Nuovi `describe`: 15 test `buildListEntryRegex` + 15 test `DOCUMENT_LIST_HEADER_RE`. |
+| `ARCHITECTURE.md` | Aggiornata sezione "Schema flusso dati" e tabella moduli. |
+
+### Risultato test
+
+123/123 test verdi (era 93 + 30 nuovi).
+
+---
+
 ## v0.5.4 — Fix auto-update platform-aware + APP_VERSION via IPC (2026-03-28)
 
 ### Cosa ho fatto

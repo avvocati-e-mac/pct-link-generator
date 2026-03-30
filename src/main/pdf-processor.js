@@ -113,6 +113,32 @@ export function buildSearchRegex(label) {
   return new RegExp(pattern + '(?![a-zA-Z0-9])', 'i');
 }
 
+/**
+ * Crea una RegExp per trovare la voce numerata nell'elenco documenti PCT.
+ * Copre i formati generati da Word, LibreOffice e LaTeX:
+ *   N)  — Word/LibreOffice numbered list (paren chiusa)
+ *   N.  — Word/LibreOffice/LaTeX \enumerate (punto)
+ *   N – — LibreOffice con em-dash (U+2013)
+ *   N - — LibreOffice/Word con trattino ASCII
+ *
+ * Il pattern è ancorato all'inizio riga (flag m) per evitare falsi match
+ * su costrutti come "(cfr. Doc. 1)" dove il numero è a metà riga.
+ *
+ * @param {string} n - Il numero come stringa (es. "1", "20")
+ * @returns {RegExp}
+ */
+export function buildListEntryRegex(n) {
+  const numEscaped = String(n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // ^ con flag m = inizio riga fisica del run mupdf — discriminante principale
+  // (?!\d) = evita che label "1" matchi "10)", "12.", ecc.
+  // (?:[).]|\s*[-\u2013]) = separatori: ) punto trattino em-dash (eventuale spazio prima del trattino)
+  // (?=\s|$) = dopo il separatore deve seguire uno spazio o fine riga
+  return new RegExp(
+    '^' + numEscaped + '(?!\\d)(?:[).]|\\s*[-\u2013])(?=\\s|$)',
+    'im'
+  );
+}
+
 // ===== Lettura coordinate testo =====
 
 /**
@@ -286,6 +312,36 @@ export function normalizeRunText(text) {
  * @param {string} searchLabel  - Etichetta da cercare (es. "doc. 1")
  * @returns {Promise<Array<{pageIndex: number, x: number, y: number, width: number, height: number, matchedText: string}>>}
  */
+
+/**
+ * Pattern per riconoscere l'header della sezione "Elenco documenti" negli atti PCT italiani.
+ * Copre le varianti più comuni previste dall'art. 167 c.p.c. e dalla prassi dei tribunali.
+ * Esportata per i test.
+ * @type {RegExp}
+ */
+export const DOCUMENT_LIST_HEADER_RE =
+  /elenco\s+(?:dei\s+)?documenti|indice\s+(?:dei\s+)?documenti|documenti\s+prodotti/i;
+
+/**
+ * Cerca la pagina che contiene l'header della sezione elenco documenti.
+ * Scansiona dall'ultima pagina verso la prima (l'elenco è sempre in fondo all'atto).
+ *
+ * @param {object} doc - Documento mupdf già aperto
+ * @returns {number|null} pageIndex (0-based) della sezione, o null se non trovata
+ */
+function findDocumentListPageIndex(doc) {
+  const numPages = doc.countPages();
+  for (let i = numPages - 1; i >= 0; i--) {
+    const page = doc.loadPage(i);
+    const text = page.toStructuredText('preserve-whitespace').asText();
+    page.destroy();
+    if (DOCUMENT_LIST_HEADER_RE.test(text)) {
+      return i;
+    }
+  }
+  return null;
+}
+
 export async function findTextCoordinates(pdfPath, searchLabel) {
   const buffer = await fs.promises.readFile(pdfPath);
 
@@ -300,6 +356,13 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
   }
 
   const regex   = buildSearchRegex(searchLabel);
+  // Se la label è un numero puro, cerca anche il pattern N) / N. / N– dell'elenco documenti
+  const isPureNumber = /^\d+$/.test(searchLabel.trim());
+  const listRegex = isPureNumber ? buildListEntryRegex(searchLabel.trim()) : null;
+  // Determina da quale pagina inizia la sezione elenco documenti.
+  // listRegex viene applicata solo a partire da quella pagina — evita falsi positivi
+  // su sezioni numerate del corpo (es. "1. Eccezione di prescrizione", "1. Rigettare...").
+  const listSectionPageIndex = listRegex ? findDocumentListPageIndex(mupdfDoc) : null;
   const results = [];
   const numPages = mupdfDoc.countPages();
 
@@ -310,19 +373,42 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
     // Passaggio 1: match per-run (caso normale — etichetta sulla stessa riga)
     for (const run of runs) {
       const normalizedText = normalizeRunText(run.text);
-      if (!normalizedText.trim() || !regex.test(normalizedText)) continue;
+      if (!normalizedText.trim()) continue;
 
-      const bounds = matchBoundsFromChars(normalizedText, regex, run.chars, run.charMap);
-      if (!bounds) continue;
+      // Match corpo testo: doc. N, allegato N, ecc.
+      if (regex.test(normalizedText)) {
+        const bounds = matchBoundsFromChars(normalizedText, regex, run.chars, run.charMap);
+        if (bounds) results.push({
+          pageIndex,
+          x:      bounds.x,
+          y:      bounds.y,
+          width:  bounds.width,
+          height: bounds.height,
+          matchedText: bounds.matchedText,
+        });
+      }
 
-      results.push({
-        pageIndex, // 0-based, coerente con pdf-lib
-        x:      bounds.x,
-        y:      bounds.y,         // sistema mupdf (top-left, Y verso il basso)
-        width:  bounds.width,
-        height: bounds.height,
-        matchedText: bounds.matchedText,
-      });
+      // Match elenco documenti: N) / N. / N– all'inizio riga.
+      // Applicato solo nelle pagine della sezione elenco (dopo l'header riconosciuto)
+      // per evitare falsi positivi su titoletti e conclusioni numerati nel corpo dell'atto.
+      // L'annotazione copre l'intera riga (xRunStart→xRunEnd) — link su tutta la descrizione.
+      if (listRegex && listSectionPageIndex !== null && pageIndex >= listSectionPageIndex) {
+        if (listRegex.test(normalizedText)) {
+          const bounds = matchBoundsFromChars(normalizedText, listRegex, run.chars, run.charMap);
+          if (bounds && run.chars.length > 0) {
+            const xRunStart = run.chars[0].quad[0];
+            const xRunEnd   = run.chars[run.chars.length - 1].quad[2];
+            results.push({
+              pageIndex,
+              x:      xRunStart,
+              y:      bounds.y,
+              width:  xRunEnd - xRunStart,
+              height: bounds.height,
+              matchedText: bounds.matchedText,
+            });
+          }
+        }
+      }
     }
 
     // Passaggio 2: match cross-run (etichetta spezzata su due righe fisiche consecutive)
