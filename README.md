@@ -36,7 +36,7 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT (Process
 2. Trascini uno o più allegati (PDF, EML, MSG, JPG, XML…), riordinabili con drag & drop (Step 2);
 3. Scegli il numero di partenza (default: 1) e, se vuoi, uno schema di rinomina automatica dei file nell'output (es. `01_`, `doc_01_`, `allegato_01_`);
 4. Rivedi il riepilogo nella finestra di anteprima prima di confermare;
-5. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link (relativi al file system) cliccabile che apre il file allegato;
+5. L'app cerca automaticamente nell'atto tutti i riferimenti agli allegati per posizione (`doc. 1`, `allegato 1`, `documento n. 1`, `all. 1`…) e aggiunge una sottolineatura blu con link (relativi al file system) cliccabile che apre il file allegato. Linka anche la voce corrispondente nell'elenco documenti finale (`1) Visura camerale...`, `1. Contratto...`, ecc.);
 6. Salva l'atto modificato e tutti gli allegati nella cartella di output scelta.
 
 **Uso tipico:** avvocati e professionisti che depositano atti telematici del _Processo Civile Telematico_ (PCT).
@@ -209,6 +209,14 @@ Tutte le varianti sopra accettano anche `n.` intermedio tra prefisso e numero:
 
 Il confronto è **case-insensitive** e tollera spazi o punti aggiuntivi tra prefisso e numero.
 
+**Elenco documenti finale:** l'app rileva automaticamente la sezione "Elenco dei documenti prodotti" (o varianti: "Elenco documenti", "Indice dei documenti", "Documenti prodotti") e aggiunge un link cliccabile anche sulla riga dell'elenco, nei formati generati da Word, LibreOffice e LaTeX:
+
+| Formato | Esempio |
+|---|---|
+| `N)` | `1) Visura camerale di Beta S.p.A.` |
+| `N.` | `1. Visura camerale di Beta S.p.A.` |
+| `N –` / `N -` | `1 – Visura camerale di Beta S.p.A.` |
+
 **Pattern non supportati** (es. `doc. 1bis` senza spazio tra numero e "bis"): vengono rilevati e segnalati con un avviso, così sai quali riferimenti non hanno ricevuto un link.
 
 ---
@@ -238,7 +246,7 @@ npm start
 npm test
 ```
 
-93 test Vitest, tutti verdi.
+123 test Vitest, tutti verdi.
 
 ### Struttura
 
@@ -283,6 +291,7 @@ tests/
 - [x] v0.5.2 — Fix CI: arch rimossa dalla config electron-builder (la passa la flag CLI del job), risolve conflitto 422 tra job ARM e Intel
 - [x] v0.5.3 — Fix auto-update macOS: "Riavvia ora" sostituito con "Scarica DMG →" che apre direttamente il DMG corretto su GitHub (quitAndInstall non funziona su app non notarizzate)
 - [x] v0.5.4 — Fix auto-update platform-aware: Windows ripristina "Riavvia ora" con quitAndInstall(), Linux apre AppImage; badge versione letto dinamicamente da package.json via IPC (eliminata costante hardcodata)
+- [x] feat: link cliccabile anche sulla riga dell'elenco documenti finale (N) N. N– N-), con rilevamento automatico della sezione e zero falsi positivi
 - [ ] Fase 8 — Packaging notarizzato (Apple Developer ID, eliminare workaround xattr)
 
 ### Note tecniche

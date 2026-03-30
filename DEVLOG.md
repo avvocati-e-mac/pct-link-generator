@@ -4,7 +4,7 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
-## feat: link all'elenco documenti PCT (2026-03-30)
+## feat: link all'elenco documenti PCT + fix falsi positivi (2026-03-30)
 
 ### Cosa ho fatto
 
@@ -32,17 +32,27 @@ all'inizio riga che Word, LibreOffice e LaTeX generano negli elenchi puntati:
   Passaggio 2 (cross-run) invariato (le voci elenco non si spezzano mai su righe fisiche).
 - **`(?!\d)` dopo il numero** — evita che label `"1"` matchi `"10)"` o `"12."`.
 
+### Decisioni prese (fix falsi positivi)
+
+Il primo approccio produceva falsi positivi: `1. Eccezione di prescrizione` (titoletto sezione)
+e `1. Rigettare...` (conclusioni numerate) matchavano il pattern `N.`.
+
+**Soluzione:** `findDocumentListPageIndex(doc)` scansiona il PDF a ritroso cercando l'header
+della sezione (`ELENCO DEI DOCUMENTI PRODOTTI`, `ELENCO DOCUMENTI`, `INDICE DEI DOCUMENTI`,
+`DOCUMENTI PRODOTTI`). `listRegex` viene applicata solo alle pagine ≥ quell'header.
+Se l'header non viene trovato → `listRegex` non applicata mai → zero falsi positivi garantiti.
+
 ### File modificati
 
 | File | Modifica |
 |------|----------|
-| `src/main/pdf-processor.js` | Nuova funzione `buildListEntryRegex(n)` (esportata). In `findTextCoordinates`: costruzione `listRegex` per label numeriche pure + loop Passaggio 1 che applica entrambe le regex. |
-| `tests/pdf-processor.test.js` | Import `buildListEntryRegex`. Nuovo `describe` con 15 test (8 match + 7 no-match). |
+| `src/main/pdf-processor.js` | Nuova `buildListEntryRegex(n)` + `DOCUMENT_LIST_HEADER_RE` (esportata) + `findDocumentListPageIndex(doc)`. In `findTextCoordinates`: `listSectionPageIndex` + guard `pageIndex >= listSectionPageIndex`. L'annotazione dell'elenco copre l'intera larghezza del run (`xRunStart→xRunEnd`). |
+| `tests/pdf-processor.test.js` | Import `buildListEntryRegex` + `DOCUMENT_LIST_HEADER_RE`. Nuovi `describe`: 15 test `buildListEntryRegex` + 15 test `DOCUMENT_LIST_HEADER_RE`. |
 | `ARCHITECTURE.md` | Aggiornata sezione "Schema flusso dati" e tabella moduli. |
 
 ### Risultato test
 
-108/108 test verdi (era 93 + 15 nuovi).
+123/123 test verdi (era 93 + 30 nuovi).
 
 ---
 
