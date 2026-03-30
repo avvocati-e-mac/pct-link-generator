@@ -12,6 +12,7 @@ import os from 'os';
 
 import {
   buildSearchRegex,
+  buildListEntryRegex,
   findTextCoordinates,
   addUnderlineLink,
   processPCTDocument,
@@ -215,6 +216,47 @@ describe('buildSearchRegex — label solo numero (posizione)', () => {
     expect(typeof SYNONYMS_PREFIX_PATTERN).toBe('string');
     expect(SYNONYMS_PREFIX_PATTERN.length).toBeGreaterThan(0);
   });
+});
+
+// ===== Test 2d: buildListEntryRegex — elenco numerato =====
+
+describe('buildListEntryRegex — pattern N) N. N– elenco documenti', () => {
+  const matchCases = [
+    // Formato N) — Word/LibreOffice numbered list
+    { n: '1',  input: '1) Visura camerale di Beta S.p.A.',      desc: 'N) Word' },
+    { n: '20', input: '20) Preventivo di ripristino danni',      desc: 'N) a due cifre' },
+    { n: '9',  input: '9) Contratto di fornitura',               desc: 'N) singola cifra' },
+    // Formato N. — LaTeX \enumerate / LibreOffice
+    { n: '1',  input: '1. Visura camerale di Beta S.p.A.',       desc: 'N. LaTeX/LibreOffice' },
+    { n: '20', input: '20. Preventivo di ripristino danni',      desc: 'N. a due cifre' },
+    // Formato N – — em-dash (U+2013)
+    { n: '1',  input: '1 \u2013 Visura camerale',                desc: 'N em-dash con spazio' },
+    { n: '1',  input: '1\u2013 Visura camerale',                 desc: 'N em-dash senza spazio prima' },
+    // Formato N - — trattino ASCII
+    { n: '1',  input: '1 - Visura camerale',                     desc: 'N trattino ASCII con spazio' },
+  ];
+
+  for (const { n, input, desc } of matchCases) {
+    it(`"${n}" trova "${desc}"`, () => {
+      expect(buildListEntryRegex(n).test(input)).toBe(true);
+    });
+  }
+
+  const noMatchCases = [
+    { n: '1',  input: '(cfr. Doc. 1)',        desc: 'paren a fine riga in corpo testo' },
+    { n: '1',  input: 'doc. 1',               desc: 'body text senza paren' },
+    { n: '1',  input: 'allegato 1',           desc: 'body text allegato' },
+    { n: '1',  input: '10) Decimo documento', desc: 'label 1 NON matcha entry 10)' },
+    { n: '1',  input: '11) Undicesimo',       desc: 'label 1 NON matcha entry 11)' },
+    { n: '1',  input: '10. Decimo documento', desc: 'label 1 NON matcha entry 10.' },
+    { n: '2',  input: '1) Visura camerale',   desc: 'label 2 NON matcha entry 1)' },
+  ];
+
+  for (const { n, input, desc } of noMatchCases) {
+    it(`"${n}" NON trova "${desc}"`, () => {
+      expect(buildListEntryRegex(n).test(input)).toBe(false);
+    });
+  }
 });
 
 // ===== Test 3: findTextCoordinates con PDF reale =====
