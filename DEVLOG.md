@@ -4,7 +4,7 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
-## feat: link all'elenco documenti PCT + fix falsi positivi (2026-03-30)
+## v0.6.0 — Link all'elenco documenti PCT (2026-03-30)
 
 ### Cosa ho fatto
 

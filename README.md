@@ -47,14 +47,14 @@ App desktop per aggiungere link cliccabili agli allegati negli atti PCT (Process
 
 ## Download
 
-Versione attuale: **v0.5.4**
+Versione attuale: **v0.6.0**
 
 | Sistema operativo | File da scaricare |
 |---|---|
-| 🍎 **macOS — Apple Silicon** (M1/M2/M3/M4) | [PCT-Link-Generator-0.5.4-arm64.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.4/PCT-Link-Generator-0.5.4-arm64.dmg) |
-| 🍎 **macOS — Intel** (x64) | [PCT-Link-Generator-0.5.4.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.4/PCT-Link-Generator-0.5.4.dmg) |
-| 🪟 **Windows** (x64) | [PCT-Link-Generator-Setup-0.5.4.exe](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.4/PCT-Link-Generator-Setup-0.5.4.exe) |
-| 🐧 **Linux** (x64) | [PCT-Link-Generator-0.5.4.AppImage](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.5.4/PCT-Link-Generator-0.5.4.AppImage) |
+| 🍎 **macOS — Apple Silicon** (M1/M2/M3/M4) | [PCT-Link-Generator-0.6.0-arm64.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.6.0/PCT-Link-Generator-0.6.0-arm64.dmg) |
+| 🍎 **macOS — Intel** (x64) | [PCT-Link-Generator-0.6.0.dmg](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.6.0/PCT-Link-Generator-0.6.0.dmg) |
+| 🪟 **Windows** (x64) | [PCT-Link-Generator-Setup-0.6.0.exe](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.6.0/PCT-Link-Generator-Setup-0.6.0.exe) |
+| 🐧 **Linux** (x64) | [PCT-Link-Generator-0.6.0.AppImage](https://github.com/avvocati-e-mac/pct-link-generator/releases/download/v0.6.0/PCT-Link-Generator-0.6.0.AppImage) |
 
 > **Non sai quale Mac hai?** Clicca sul menu  (in alto a sinistra) → "Informazioni su questo Mac". Se vedi "Chip: Apple M…" scarica la versione **ARM64**, altrimenti scarica la versione **Intel**.
 
@@ -133,13 +133,13 @@ Scarica il file `.AppImage` dalla tabella Download qui sopra.
 **Prima di avviarlo**, devi renderlo eseguibile. Apri il terminale nella cartella dove hai scaricato il file ed esegui:
 
 ```bash
-chmod +x PCT-Link-Generator-0.5.4.AppImage
+chmod +x PCT-Link-Generator-0.6.0.AppImage
 ```
 
 Poi avvialo con:
 
 ```bash
-./PCT-Link-Generator-0.5.4.AppImage
+./PCT-Link-Generator-0.6.0.AppImage
 ```
 
 In alternativa, puoi rendere il file eseguibile dalla gestione file del tuo desktop environment (click destro → Proprietà → Permessi → "Consenti esecuzione come programma") e poi aprirlo con un doppio clic come qualsiasi altra app.
@@ -291,7 +291,7 @@ tests/
 - [x] v0.5.2 — Fix CI: arch rimossa dalla config electron-builder (la passa la flag CLI del job), risolve conflitto 422 tra job ARM e Intel
 - [x] v0.5.3 — Fix auto-update macOS: "Riavvia ora" sostituito con "Scarica DMG →" che apre direttamente il DMG corretto su GitHub (quitAndInstall non funziona su app non notarizzate)
 - [x] v0.5.4 — Fix auto-update platform-aware: Windows ripristina "Riavvia ora" con quitAndInstall(), Linux apre AppImage; badge versione letto dinamicamente da package.json via IPC (eliminata costante hardcodata)
-- [x] feat: link cliccabile anche sulla riga dell'elenco documenti finale (N) N. N– N-), con rilevamento automatico della sezione e zero falsi positivi
+- [x] v0.6.0 — Link cliccabile anche sulla riga dell'elenco documenti finale (N) N. N– N-), con rilevamento automatico della sezione e zero falsi positivi
 - [ ] Fase 8 — Packaging notarizzato (Apple Developer ID, eliminare workaround xattr)
 
 ### Note tecniche
