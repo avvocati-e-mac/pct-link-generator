@@ -312,6 +312,36 @@ export function normalizeRunText(text) {
  * @param {string} searchLabel  - Etichetta da cercare (es. "doc. 1")
  * @returns {Promise<Array<{pageIndex: number, x: number, y: number, width: number, height: number, matchedText: string}>>}
  */
+
+/**
+ * Pattern per riconoscere l'header della sezione "Elenco documenti" negli atti PCT italiani.
+ * Copre le varianti più comuni previste dall'art. 167 c.p.c. e dalla prassi dei tribunali.
+ * Esportata per i test.
+ * @type {RegExp}
+ */
+export const DOCUMENT_LIST_HEADER_RE =
+  /elenco\s+(?:dei\s+)?documenti|indice\s+(?:dei\s+)?documenti|documenti\s+prodotti/i;
+
+/**
+ * Cerca la pagina che contiene l'header della sezione elenco documenti.
+ * Scansiona dall'ultima pagina verso la prima (l'elenco è sempre in fondo all'atto).
+ *
+ * @param {object} doc - Documento mupdf già aperto
+ * @returns {number|null} pageIndex (0-based) della sezione, o null se non trovata
+ */
+function findDocumentListPageIndex(doc) {
+  const numPages = doc.countPages();
+  for (let i = numPages - 1; i >= 0; i--) {
+    const page = doc.loadPage(i);
+    const text = page.toStructuredText('preserve-whitespace').asText();
+    page.destroy();
+    if (DOCUMENT_LIST_HEADER_RE.test(text)) {
+      return i;
+    }
+  }
+  return null;
+}
+
 export async function findTextCoordinates(pdfPath, searchLabel) {
   const buffer = await fs.promises.readFile(pdfPath);
 
@@ -329,6 +359,10 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
   // Se la label è un numero puro, cerca anche il pattern N) / N. / N– dell'elenco documenti
   const isPureNumber = /^\d+$/.test(searchLabel.trim());
   const listRegex = isPureNumber ? buildListEntryRegex(searchLabel.trim()) : null;
+  // Determina da quale pagina inizia la sezione elenco documenti.
+  // listRegex viene applicata solo a partire da quella pagina — evita falsi positivi
+  // su sezioni numerate del corpo (es. "1. Eccezione di prescrizione", "1. Rigettare...").
+  const listSectionPageIndex = listRegex ? findDocumentListPageIndex(mupdfDoc) : null;
   const results = [];
   const numPages = mupdfDoc.countPages();
 
@@ -354,17 +388,26 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
         });
       }
 
-      // Match elenco documenti: N) / N. / N– all'inizio riga
-      if (listRegex && listRegex.test(normalizedText)) {
-        const bounds = matchBoundsFromChars(normalizedText, listRegex, run.chars, run.charMap);
-        if (bounds) results.push({
-          pageIndex,
-          x:      bounds.x,
-          y:      bounds.y,
-          width:  bounds.width,
-          height: bounds.height,
-          matchedText: bounds.matchedText,
-        });
+      // Match elenco documenti: N) / N. / N– all'inizio riga.
+      // Applicato solo nelle pagine della sezione elenco (dopo l'header riconosciuto)
+      // per evitare falsi positivi su titoletti e conclusioni numerati nel corpo dell'atto.
+      // L'annotazione copre l'intera riga (xRunStart→xRunEnd) — link su tutta la descrizione.
+      if (listRegex && listSectionPageIndex !== null && pageIndex >= listSectionPageIndex) {
+        if (listRegex.test(normalizedText)) {
+          const bounds = matchBoundsFromChars(normalizedText, listRegex, run.chars, run.charMap);
+          if (bounds && run.chars.length > 0) {
+            const xRunStart = run.chars[0].quad[0];
+            const xRunEnd   = run.chars[run.chars.length - 1].quad[2];
+            results.push({
+              pageIndex,
+              x:      xRunStart,
+              y:      bounds.y,
+              width:  xRunEnd - xRunStart,
+              height: bounds.height,
+              matchedText: bounds.matchedText,
+            });
+          }
+        }
       }
     }
 

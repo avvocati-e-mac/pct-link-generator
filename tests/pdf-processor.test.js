@@ -13,6 +13,7 @@ import os from 'os';
 import {
   buildSearchRegex,
   buildListEntryRegex,
+  DOCUMENT_LIST_HEADER_RE,
   findTextCoordinates,
   addUnderlineLink,
   processPCTDocument,
@@ -255,6 +256,41 @@ describe('buildListEntryRegex — pattern N) N. N– elenco documenti', () => {
   for (const { n, input, desc } of noMatchCases) {
     it(`"${n}" NON trova "${desc}"`, () => {
       expect(buildListEntryRegex(n).test(input)).toBe(false);
+    });
+  }
+});
+
+// ===== Test 2e: DOCUMENT_LIST_HEADER_RE — riconoscimento header sezione =====
+
+describe('DOCUMENT_LIST_HEADER_RE — riconoscimento header sezione elenco documenti', () => {
+  const matchCases = [
+    'ELENCO DEI DOCUMENTI PRODOTTI',
+    'Elenco dei documenti prodotti',
+    'ELENCO DOCUMENTI',
+    'Elenco documenti',
+    'INDICE DEI DOCUMENTI PRODOTTI',
+    'Indice dei documenti',
+    'DOCUMENTI PRODOTTI',
+  ];
+  for (const input of matchCases) {
+    it(`riconosce "${input}"`, () => {
+      expect(DOCUMENT_LIST_HEADER_RE.test(input)).toBe(true);
+    });
+  }
+
+  const noMatchCases = [
+    'ECCEZIONI',
+    'CONCLUSIONI',
+    'NEL MERITO',
+    'IN VIA PRELIMINARE',
+    'DOMANDA RICONVENZIONALE',
+    'ISTANZE ISTRUTTORIE',
+    '1. Eccezione di prescrizione',
+    '1. Rigettare integralmente le domande',
+  ];
+  for (const input of noMatchCases) {
+    it(`NON riconosce "${input}"`, () => {
+      expect(DOCUMENT_LIST_HEADER_RE.test(input)).toBe(false);
     });
   }
 });
