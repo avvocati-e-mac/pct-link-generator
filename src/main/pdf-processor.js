@@ -113,6 +113,32 @@ export function buildSearchRegex(label) {
   return new RegExp(pattern + '(?![a-zA-Z0-9])', 'i');
 }
 
+/**
+ * Crea una RegExp per trovare la voce numerata nell'elenco documenti PCT.
+ * Copre i formati generati da Word, LibreOffice e LaTeX:
+ *   N)  — Word/LibreOffice numbered list (paren chiusa)
+ *   N.  — Word/LibreOffice/LaTeX \enumerate (punto)
+ *   N – — LibreOffice con em-dash (U+2013)
+ *   N - — LibreOffice/Word con trattino ASCII
+ *
+ * Il pattern è ancorato all'inizio riga (flag m) per evitare falsi match
+ * su costrutti come "(cfr. Doc. 1)" dove il numero è a metà riga.
+ *
+ * @param {string} n - Il numero come stringa (es. "1", "20")
+ * @returns {RegExp}
+ */
+export function buildListEntryRegex(n) {
+  const numEscaped = String(n).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  // ^ con flag m = inizio riga fisica del run mupdf — discriminante principale
+  // (?!\d) = evita che label "1" matchi "10)", "12.", ecc.
+  // (?:[).]|\s*[-\u2013]) = separatori: ) punto trattino em-dash (eventuale spazio prima del trattino)
+  // (?=\s|$) = dopo il separatore deve seguire uno spazio o fine riga
+  return new RegExp(
+    '^' + numEscaped + '(?!\\d)(?:[).]|\\s*[-\u2013])(?=\\s|$)',
+    'im'
+  );
+}
+
 // ===== Lettura coordinate testo =====
 
 /**
@@ -300,6 +326,9 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
   }
 
   const regex   = buildSearchRegex(searchLabel);
+  // Se la label è un numero puro, cerca anche il pattern N) / N. / N– dell'elenco documenti
+  const isPureNumber = /^\d+$/.test(searchLabel.trim());
+  const listRegex = isPureNumber ? buildListEntryRegex(searchLabel.trim()) : null;
   const results = [];
   const numPages = mupdfDoc.countPages();
 
@@ -310,19 +339,33 @@ export async function findTextCoordinates(pdfPath, searchLabel) {
     // Passaggio 1: match per-run (caso normale — etichetta sulla stessa riga)
     for (const run of runs) {
       const normalizedText = normalizeRunText(run.text);
-      if (!normalizedText.trim() || !regex.test(normalizedText)) continue;
+      if (!normalizedText.trim()) continue;
 
-      const bounds = matchBoundsFromChars(normalizedText, regex, run.chars, run.charMap);
-      if (!bounds) continue;
+      // Match corpo testo: doc. N, allegato N, ecc.
+      if (regex.test(normalizedText)) {
+        const bounds = matchBoundsFromChars(normalizedText, regex, run.chars, run.charMap);
+        if (bounds) results.push({
+          pageIndex,
+          x:      bounds.x,
+          y:      bounds.y,
+          width:  bounds.width,
+          height: bounds.height,
+          matchedText: bounds.matchedText,
+        });
+      }
 
-      results.push({
-        pageIndex, // 0-based, coerente con pdf-lib
-        x:      bounds.x,
-        y:      bounds.y,         // sistema mupdf (top-left, Y verso il basso)
-        width:  bounds.width,
-        height: bounds.height,
-        matchedText: bounds.matchedText,
-      });
+      // Match elenco documenti: N) / N. / N– all'inizio riga
+      if (listRegex && listRegex.test(normalizedText)) {
+        const bounds = matchBoundsFromChars(normalizedText, listRegex, run.chars, run.charMap);
+        if (bounds) results.push({
+          pageIndex,
+          x:      bounds.x,
+          y:      bounds.y,
+          width:  bounds.width,
+          height: bounds.height,
+          matchedText: bounds.matchedText,
+        });
+      }
     }
 
     // Passaggio 2: match cross-run (etichetta spezzata su due righe fisiche consecutive)
