@@ -86,7 +86,7 @@ I canali Main→Renderer usano `mainWindow.webContents.send` / `ipcRenderer.on` 
 |------|----------------|
 | `main.js` | Entry point Electron. Crea `BrowserWindow`, registra handler IPC, chiama `setupUpdater(mainWindow)` in `ready-to-show`, gestisce lifecycle app. **Nessuna logica PDF.** |
 | `preload.cjs` | Bridge sicuro (CJS — Electron non supporta ESM nel preload). Espone `window.electronAPI` via `contextBridge`: `processPDF`, `selectOutputFolder`, `getPathForFile`, `renderPdfPage`, `quitApp`, `openPath`, `downloadUpdate`, `installUpdate`, `onUpdateEvent`. |
-| `pdf-processor.js` | Tutta la logica PDF: `checkPdfNativity`, `findTextCoordinates` (mupdf), `addUnderlineLink` (pdf-lib), `buildRenamedName` / `hasLeadingNumber`, `processPCTDocument`. **Nessun codice Electron.** |
+| `pdf-processor.js` | Tutta la logica PDF: `checkPdfNativity`, `buildSearchRegex` / `buildListEntryRegex` (matching corpus + elenco documenti), `findTextCoordinates` (mupdf), `addUnderlineLink` (pdf-lib), `buildRenamedName` / `hasLeadingNumber`, `processPCTDocument`. **Nessun codice Electron.** |
 | `updater.js` | Auto-update via `electron-updater`. `setupUpdater(win)` configura i listener su `autoUpdater` e avvia `checkForUpdates()` in background. `downloadUpdate()` e `quitAndInstall()` delegano ad `autoUpdater`. Gli eventi di avanzamento vengono inviati al renderer via `webContents.send`. |
 
 ### Packaging
@@ -178,10 +178,16 @@ UTENTE
                     │           → NON fa match su "1" isolato, importi, P.IVA, "att. 1", "ex 1"
                     │       → Caso B (label con prefisso es. "doc. 1"):
                     │           espansione sinonimi via LABEL_SYNONYM_GROUPS
+                    │     buildListEntryRegex(label)  [solo se label è numero puro]
+                    │       → regex ancorata a inizio riga (flag m): ^N(?!\d)(?:[).]|\s*[-–])(?=\s|$)
+                    │       → fa match su "N)" "N." "N –" "N -" all'inizio riga
+                    │         (formati Word/LibreOffice/LaTeX nell'elenco documenti allegati)
+                    │       → NON fa match su "(cfr. Doc. N)" a metà riga
                     │     findTextCoordinates(mainPdfPath, label)
                     │       → mupdf: apre PDF, stext.walk() per-carattere
                     │       → extractCharRuns(): raggruppa char in righe fisiche
                     │       → Passaggio 1 — match per-run (stessa riga):
+                    │           regex corpo testo + listRegex elenco documenti (in parallelo)
                     │           matchBoundsFromChars(): bbox esatto del match
                     │       → Passaggio 2 — match cross-run (etichetta a cavallo di riga):
                     │           coppie (runA, runB) consecutive → testo concatenato

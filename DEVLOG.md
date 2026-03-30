@@ -4,6 +4,48 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## feat: link all'elenco documenti PCT (2026-03-30)
+
+### Cosa ho fatto
+
+Aggiunta la ricerca del marcatore numerico di inizio voce nell'elenco documenti allegati
+(di solito l'ultima pagina degli atti PCT). Prima l'app cercava solo i riferimenti nel
+corpo del testo (`doc. 1`, `allegato 1`, ecc.); ora cerca anche il pattern numerico
+all'inizio riga che Word, LibreOffice e LaTeX generano negli elenchi puntati:
+
+| Formato | Esempio | Generato da |
+|---------|---------|------------|
+| `N)` | `1) Visura camerale di Beta S.p.A.` | Word/LibreOffice numbered list |
+| `N.` | `1. Visura camerale di Beta S.p.A.` | LaTeX `\enumerate`, LibreOffice |
+| `N –` | `1 – Visura camerale di Beta S.p.A.` | LibreOffice em-dash |
+| `N -` | `1 - Visura camerale di Beta S.p.A.` | Word/LibreOffice trattino |
+
+### Decisioni prese
+
+- **Solo `pdf-processor.js` e test** — nessuna modifica a renderer, IPC, UI. La label
+  passata dal renderer rimane `"1"` (numero puro); la logica aggiuntiva è tutta interna.
+- **Regex ancorata con `^` + flag `m`** — il discriminante principale è che `N)` nell'elenco
+  è all'inizio di un run fisico (mupdf spezza per riga Y), mentre `(cfr. Doc. 1)` ha il
+  numero a metà riga. L'ancora `^` con `m` evita i falsi match senza euristica aggiuntiva.
+- **`listRegex` parallela, non alternativa** — le due regex (corpus + elenco) vengono
+  applicate separatamente nello stesso loop Passaggio 1. Mantiene la leggibilità e il
+  Passaggio 2 (cross-run) invariato (le voci elenco non si spezzano mai su righe fisiche).
+- **`(?!\d)` dopo il numero** — evita che label `"1"` matchi `"10)"` o `"12."`.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `src/main/pdf-processor.js` | Nuova funzione `buildListEntryRegex(n)` (esportata). In `findTextCoordinates`: costruzione `listRegex` per label numeriche pure + loop Passaggio 1 che applica entrambe le regex. |
+| `tests/pdf-processor.test.js` | Import `buildListEntryRegex`. Nuovo `describe` con 15 test (8 match + 7 no-match). |
+| `ARCHITECTURE.md` | Aggiornata sezione "Schema flusso dati" e tabella moduli. |
+
+### Risultato test
+
+108/108 test verdi (era 93 + 15 nuovi).
+
+---
+
 ## v0.5.4 — Fix auto-update platform-aware + APP_VERSION via IPC (2026-03-28)
 
 ### Cosa ho fatto
