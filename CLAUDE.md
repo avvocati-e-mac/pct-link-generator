@@ -129,6 +129,8 @@ Prima di creare un tag `vX.Y.Z` e avviare la CI, esegui **tutti** questi passi n
      via IPC (`app:getVersion` → `app.getVersion()`): **non esiste una costante separata
      da aggiornare nel renderer**
    - Se le due versioni non coincidono, aggiorna `package.json` prima di procedere
+   - ⚠️ Verifica che `src/renderer/index.html` contenga `v…` nel badge versione,
+     **mai un numero hardcoded** — il valore viene sempre iniettato via IPC a runtime
 
 1. **Aggiorna `README.md` — sezione Download:**
    - Cambia il numero di versione nella riga "Versione attuale: **vX.Y.Z**"

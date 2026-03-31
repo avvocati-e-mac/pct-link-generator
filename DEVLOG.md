@@ -4,6 +4,42 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
+## v0.6.0 — Fix badge versione (2026-03-31)
+
+### Cosa ho fatto
+
+Corretto il bug per cui il badge versione nell'header mostrava il vecchio numero (`v0.5.3`)
+invece di quello attuale.
+
+### Root cause
+
+In `preload.cjs` la costante `GET_APP_VERSION` mancava dall'oggetto `IPC_CHANNELS` locale
+(il preload usa CJS e non importa da `types.js`). L'invoke falliva silenziosamente con
+canale `undefined`, lasciando il placeholder hardcoded nell'HTML.
+
+Contestualmente, il badge in `index.html` aveva `v0.5.3` hardcoded come fallback.
+Sostituito con `v…` (placeholder neutro) — il renderer lo sovrascrive sempre via IPC.
+
+### Decisioni prese
+
+- La `const APP_VERSION` hardcodata era stata rimossa nella sessione 023, ma il bug nel
+  preload impediva all'IPC di funzionare. Fix minimale: aggiungere la costante mancante.
+- Aggiunto avviso in CLAUDE.md checklist pre-build per prevenire regressioni future.
+
+### File modificati
+
+| File | Modifica |
+|------|----------|
+| `src/main/preload.cjs` | Aggiunto `GET_APP_VERSION: 'app:getVersion'` in `IPC_CHANNELS` |
+| `src/renderer/index.html` | Badge `v0.5.3` → `v…` (placeholder neutro) |
+| `CLAUDE.md` | Avviso in checklist pre-build: badge non deve contenere versione hardcoded |
+
+### Risultato test
+
+123/123 test verdi.
+
+---
+
 ## v0.6.0 — Link all'elenco documenti PCT (2026-03-30)
 
 ### Cosa ho fatto

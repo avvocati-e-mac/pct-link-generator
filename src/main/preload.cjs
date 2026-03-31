@@ -11,6 +11,7 @@ const IPC_CHANNELS = {
   QUIT_APP:             'app:quit',
   OPEN_PATH:            'shell:openPath',
   OPEN_URL:             'shell:openUrl',
+  GET_APP_VERSION:      'app:getVersion',
   // Auto-update
   UPDATE_AVAILABLE:     'update:available',
   UPDATE_PROGRESS:      'update:progress',
