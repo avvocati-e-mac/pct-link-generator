@@ -1,7 +1,7 @@
 # Sessione 024 — Fix badge versione hardcoded
 
 **Data:** 2026-03-31
-**Versione:** 0.6.0
+**Versione:** 0.6.1
 
 ## Obiettivo
 

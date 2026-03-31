@@ -4,7 +4,7 @@ Registro delle decisioni e dei problemi per ogni commit/fase.
 
 ---
 
-## v0.6.0 — Fix badge versione (2026-03-31)
+## v0.6.1 — Fix badge versione (2026-03-31)
 
 ### Cosa ho fatto
 
