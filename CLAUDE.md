@@ -123,6 +123,13 @@ problemi risolti o aperti.
 
 Prima di creare un tag `vX.Y.Z` e avviare la CI, esegui **tutti** questi passi nell'ordine:
 
+0. **Verifica sincronizzazione versione:**
+   - Controlla che `package.json` → `"version"` corrisponda alla versione che vuoi rilasciare
+   - La versione mostrata nell'interfaccia viene letta direttamente da `package.json`
+     via IPC (`app:getVersion` → `app.getVersion()`): **non esiste una costante separata
+     da aggiornare nel renderer**
+   - Se le due versioni non coincidono, aggiorna `package.json` prima di procedere
+
 1. **Aggiorna `README.md` — sezione Download:**
    - Cambia il numero di versione nella riga "Versione attuale: **vX.Y.Z**"
    - Aggiorna tutti e 4 i link di download con il nuovo numero di versione
@@ -132,20 +139,17 @@ Prima di creare un tag `vX.Y.Z` e avviare la CI, esegui **tutti** questi passi n
    - Aggiungi una riga `- [x] vX.Y.Z — [descrizione delle novità]` con le funzionalità
      introdotte nella release
 
-3. **Aggiorna `src/renderer/renderer.js`:**
-   - Cambia la costante `APP_VERSION` con il nuovo numero di versione
-
-4. **Aggiorna `DEVLOG.md`:**
+3. **Aggiorna `DEVLOG.md`:**
    - Aggiungi una sezione `## vX.Y.Z — [titolo] (YYYY-MM-DD)` con: cosa è cambiato,
      decisioni prese, file modificati, risultato dei test
 
-5. **Aggiorna `ARCHITECTURE.md`** se l'architettura è cambiata
+4. **Aggiorna `ARCHITECTURE.md`** se l'architettura è cambiata
 
-6. **Esegui `npm test`** — tutti i test devono essere verdi
+5. **Esegui `npm test`** — tutti i test devono essere verdi
 
-7. **Crea il commit** con `chore: bump vX.Y.Z` e poi il tag
+6. **Crea il commit** con `chore: bump vX.Y.Z` e poi il tag
 
-8. **Dopo che la CI ha pubblicato la release**, aggiorna il body su GitHub con le novità:
+7. **Dopo che la CI ha pubblicato la release**, aggiorna il body su GitHub con le novità:
    - Usa `gh release edit vX.Y.Z --repo avvocati-e-mac/pct-link-generator --notes-file <file>`
    - Il body deve contenere: tabella link download (generata dal job CI), sezione
      **## Novità in questa versione** con le funzionalità introdotte in linguaggio
